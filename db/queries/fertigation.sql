@@ -14,6 +14,14 @@ INSERT INTO gr33nfertigation.reservoirs (
 ) VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *;
 
+-- name: UpdateReservoirCirculationActuator :one
+-- Phase 216 WS7 — wire (or clear) the reservoir's circulation pump. Used both
+-- as the WS2 dosing-session default and the WS7 idle-maintenance target.
+UPDATE gr33nfertigation.reservoirs
+SET circulation_actuator_id = $2
+WHERE id = $1
+RETURNING *;
+
 -- name: ListEcTargetsByFarm :many
 SELECT * FROM gr33nfertigation.ec_targets
 WHERE farm_id = $1

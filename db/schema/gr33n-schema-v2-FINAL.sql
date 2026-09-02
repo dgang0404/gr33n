@@ -1482,6 +1482,10 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.reservoirs (
     temp_sensor_id          BIGINT REFERENCES gr33ncore.sensors(id) ON DELETE SET NULL,
     water_level_sensor_id   BIGINT REFERENCES gr33ncore.sensors(id) ON DELETE SET NULL,
     delivery_actuator_id    BIGINT REFERENCES gr33ncore.actuators(id) ON DELETE SET NULL,
+    -- Phase 216 WS7 — this reservoir's circulation_pump actuator, used both as
+    -- the WS2 dosing-session default and the WS7 idle-maintenance schedule's
+    -- target. Deliberately separate from delivery_actuator_id (the dosing pump).
+    circulation_actuator_id BIGINT REFERENCES gr33ncore.actuators(id) ON DELETE SET NULL,
     last_ec_mscm            NUMERIC(6,3) CHECK (last_ec_mscm >= 0),
     last_ph                 NUMERIC(4,2) CHECK (last_ph >= 0 AND last_ph <= 14),
     last_reading_time       TIMESTAMPTZ,

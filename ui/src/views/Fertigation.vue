@@ -103,6 +103,46 @@
                 <router-link v-if="r.zone_id" v-nav-hint="'/zones'" :to="`/zones/${r.zone_id}`" class="hover:text-green-400 transition-colors">{{ zoneLabel(r.zone_id) }}</router-link>
             <span v-else>All zones</span>
           </p>
+
+          <!-- Phase 216 WS7 — idle-maintenance circulation (rain/bulk-capture tanks) -->
+          <div class="pt-2 border-t border-zinc-800 space-y-1.5">
+            <div v-if="!r.circulation_actuator_id" class="flex items-center gap-1.5">
+              <select v-model="wiringActuatorId[r.id]" class="input-field text-xs py-1">
+                <option value="">Wire circulation pump…</option>
+                <option v-for="a in circulationPumps" :key="a.id" :value="a.id">{{ a.name }}</option>
+              </select>
+              <button @click="wireCirculationPump(r)" :disabled="!wiringActuatorId[r.id] || circBusy[r.id]"
+                class="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded-lg disabled:opacity-50">
+                Wire
+              </button>
+            </div>
+            <template v-else>
+              <div class="flex items-center justify-between">
+                <p class="text-zinc-500 text-xs">Circulation: {{ circulationPumpLabel(r) }}</p>
+                <button @click="toggleCircForm(r)" class="text-green-500 hover:text-green-400 text-xs">
+                  {{ showCircForm[r.id] ? 'Cancel' : '+ Add maintenance circulation' }}
+                </button>
+              </div>
+              <form v-if="showCircForm[r.id]" @submit.prevent="submitMaintenanceCirculation(r)"
+                class="flex items-end gap-1.5">
+                <label class="text-[10px] text-zinc-500">Every
+                  <input v-model.number="circForm[r.id].intervalDays" type="number" min="1" max="30"
+                    class="input-field text-xs py-1 w-14 mt-0.5" /> days
+                </label>
+                <label class="text-[10px] text-zinc-500">For
+                  <input v-model.number="circForm[r.id].durationMinutes" type="number" min="1" max="60"
+                    class="input-field text-xs py-1 w-14 mt-0.5" /> min
+                </label>
+                <button type="submit" :disabled="circBusy[r.id]"
+                  class="px-2 py-1 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg disabled:opacity-50">
+                  {{ circBusy[r.id] ? 'Saving…' : 'Create' }}
+                </button>
+              </form>
+              <p v-if="circMessage[r.id]" class="text-xs" :class="circMessage[r.id].ok ? 'text-green-400' : 'text-red-400'">
+                {{ circMessage[r.id].text }}
+              </p>
+            </template>
+          </div>
         </div>
       </div>
       <p v-if="!reservoirs.length" class="text-zinc-500 text-sm">No reservoirs configured yet.</p>
@@ -1120,6 +1160,78 @@ async function submitReservoir() {
     resForm.value = { name: '', status: 'ready', capacity_liters: 0, current_volume_liters: 0, zone_id: null }
     reservoirs.value = await store.loadReservoirs(farmId.value)
   } finally { saving.value = false }
+}
+
+// Phase 216 WS7 — reservoir idle-maintenance circulation. Reuses the same
+// schedule + program + executable_action building blocks the Programs tab
+// already uses; this is just a quick-create shortcut scoped to one reservoir
+// so an operator doesn't need to click through three separate tabs to set up
+// "run the circulation pump for a few minutes every few days."
+const circulationPumps = computed(() =>
+  store.actuators.filter((a) => a.actuator_type === 'circulation_pump'),
+)
+const wiringActuatorId = reactive({})
+const showCircForm = reactive({})
+const circForm = reactive({})
+const circBusy = reactive({})
+const circMessage = reactive({})
+
+function circulationPumpLabel(r) {
+  const pump = store.actuators.find((a) => a.id === r.circulation_actuator_id)
+  return pump ? pump.name : null
+}
+
+async function wireCirculationPump(r) {
+  const actuatorId = wiringActuatorId[r.id]
+  if (!actuatorId) return
+  circBusy[r.id] = true
+  try {
+    await store.setReservoirCirculationActuator(r.id, Number(actuatorId))
+    reservoirs.value = await store.loadReservoirs(farmId.value)
+  } finally { circBusy[r.id] = false }
+}
+
+function toggleCircForm(r) {
+  showCircForm[r.id] = !showCircForm[r.id]
+  if (showCircForm[r.id] && !circForm[r.id]) {
+    circForm[r.id] = { intervalDays: 3, durationMinutes: 10 }
+  }
+  delete circMessage[r.id]
+}
+
+async function submitMaintenanceCirculation(r) {
+  if (!r.circulation_actuator_id) return
+  const form = circForm[r.id]
+  circBusy[r.id] = true
+  delete circMessage[r.id]
+  try {
+    const schedule = await store.createSchedule(farmId.value, {
+      name: `${r.name} — circulation every ${form.intervalDays}d`,
+      schedule_type: 'cron',
+      cron_expression: `0 3 */${form.intervalDays} * *`,
+      timezone: 'UTC',
+      is_active: true,
+    })
+    const program = await store.createProgram(farmId.value, {
+      name: `${r.name} — maintenance circulation`,
+      reservoir_id: r.id,
+      schedule_id: schedule.id,
+      irrigation_only: true,
+      run_duration_seconds: Math.round(form.durationMinutes * 60),
+      is_active: true,
+    })
+    await store.createProgramAction(program.id, {
+      execution_order: 0,
+      action_type: 'control_actuator',
+      target_actuator_id: r.circulation_actuator_id,
+      action_command: 'on',
+    })
+    programs.value = await store.loadFertigationPrograms(farmId.value)
+    showCircForm[r.id] = false
+    circMessage[r.id] = { ok: true, text: 'Maintenance circulation scheduled.' }
+  } catch (err) {
+    circMessage[r.id] = { ok: false, text: err?.response?.data?.error || 'Failed to create schedule.' }
+  } finally { circBusy[r.id] = false }
 }
 
 async function submitEcTarget() {

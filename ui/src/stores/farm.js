@@ -732,6 +732,13 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    async setReservoirCirculationActuator(reservoirId, actuatorId) {
+      const r = await api.patch(`/fertigation/reservoirs/${reservoirId}/circulation-actuator`, {
+        actuator_id: actuatorId || 0,
+      })
+      return r.data
+    },
+
     async createEcTarget(farmId, data) {
       const r = await api.post(`/farms/${farmId}/fertigation/ec-targets`, data)
       return r.data

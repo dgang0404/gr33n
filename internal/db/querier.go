@@ -800,6 +800,9 @@ type Querier interface {
 	// Phase 39 WS6 — operator sets base EC/pH of source water so the mix
 	// calculator always has a starting point. Stamps last_reading_time = NOW().
 	UpdateReservoirBaseWater(ctx context.Context, arg UpdateReservoirBaseWaterParams) (Gr33nfertigationReservoir, error)
+	// Phase 216 WS7 — wire (or clear) the reservoir's circulation pump. Used both
+	// as the WS2 dosing-session default and the WS7 idle-maintenance target.
+	UpdateReservoirCirculationActuator(ctx context.Context, arg UpdateReservoirCirculationActuatorParams) (Gr33nfertigationReservoir, error)
 	UpdateSchedule(ctx context.Context, arg UpdateScheduleParams) (Gr33ncoreSchedule, error)
 	UpdateScheduleActive(ctx context.Context, arg UpdateScheduleActiveParams) (Gr33ncoreSchedule, error)
 	// Patch-style update: each field overwritten when the caller passes a non-NULL value;

@@ -350,7 +350,7 @@ INSERT INTO gr33nfertigation.reservoirs (
     farm_id, zone_id, name, description, capacity_liters,
     current_volume_liters, status
 ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at
+RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, circulation_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at
 `
 
 type CreateReservoirParams struct {
@@ -388,6 +388,7 @@ func (q *Queries) CreateReservoir(ctx context.Context, arg CreateReservoirParams
 		&i.TempSensorID,
 		&i.WaterLevelSensorID,
 		&i.DeliveryActuatorID,
+		&i.CirculationActuatorID,
 		&i.LastEcMscm,
 		&i.LastPh,
 		&i.LastReadingTime,
@@ -509,7 +510,7 @@ func (q *Queries) GetFertigationProgramZoneBySchedule(ctx context.Context, arg G
 }
 
 const getFertigationReservoirByID = `-- name: GetFertigationReservoirByID :one
-SELECT id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at FROM gr33nfertigation.reservoirs
+SELECT id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, circulation_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at FROM gr33nfertigation.reservoirs
 WHERE id = $1 AND deleted_at IS NULL
 `
 
@@ -530,6 +531,7 @@ func (q *Queries) GetFertigationReservoirByID(ctx context.Context, id int64) (Gr
 		&i.TempSensorID,
 		&i.WaterLevelSensorID,
 		&i.DeliveryActuatorID,
+		&i.CirculationActuatorID,
 		&i.LastEcMscm,
 		&i.LastPh,
 		&i.LastReadingTime,
@@ -966,7 +968,7 @@ func (q *Queries) ListProgramsByFarmUpdatedAfter(ctx context.Context, arg ListPr
 
 const listReservoirsByFarm = `-- name: ListReservoirsByFarm :many
 
-SELECT id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at FROM gr33nfertigation.reservoirs
+SELECT id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, circulation_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at FROM gr33nfertigation.reservoirs
 WHERE farm_id = $1 AND deleted_at IS NULL
 ORDER BY name ASC
 `
@@ -997,6 +999,7 @@ func (q *Queries) ListReservoirsByFarm(ctx context.Context, farmID int64) ([]Gr3
 			&i.TempSensorID,
 			&i.WaterLevelSensorID,
 			&i.DeliveryActuatorID,
+			&i.CirculationActuatorID,
 			&i.LastEcMscm,
 			&i.LastPh,
 			&i.LastReadingTime,
@@ -1226,7 +1229,7 @@ UPDATE gr33nfertigation.reservoirs
 SET name = $2, description = $3, capacity_liters = $4,
     current_volume_liters = $5, status = $6, updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at
+RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, circulation_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at
 `
 
 type UpdateReservoirParams struct {
@@ -1262,6 +1265,7 @@ func (q *Queries) UpdateReservoir(ctx context.Context, arg UpdateReservoirParams
 		&i.TempSensorID,
 		&i.WaterLevelSensorID,
 		&i.DeliveryActuatorID,
+		&i.CirculationActuatorID,
 		&i.LastEcMscm,
 		&i.LastPh,
 		&i.LastReadingTime,
@@ -1280,7 +1284,7 @@ SET last_ec_mscm      = $2,
     last_reading_time = NOW(),
     updated_at        = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at
+RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, circulation_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at
 `
 
 type UpdateReservoirBaseWaterParams struct {
@@ -1308,6 +1312,50 @@ func (q *Queries) UpdateReservoirBaseWater(ctx context.Context, arg UpdateReserv
 		&i.TempSensorID,
 		&i.WaterLevelSensorID,
 		&i.DeliveryActuatorID,
+		&i.CirculationActuatorID,
+		&i.LastEcMscm,
+		&i.LastPh,
+		&i.LastReadingTime,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateReservoirCirculationActuator = `-- name: UpdateReservoirCirculationActuator :one
+UPDATE gr33nfertigation.reservoirs
+SET circulation_actuator_id = $2
+WHERE id = $1
+RETURNING id, farm_id, zone_id, name, description, capacity_liters, current_volume_liters, status, ec_sensor_id, ph_sensor_id, temp_sensor_id, water_level_sensor_id, delivery_actuator_id, circulation_actuator_id, last_ec_mscm, last_ph, last_reading_time, metadata, created_at, updated_at, deleted_at
+`
+
+type UpdateReservoirCirculationActuatorParams struct {
+	ID                    int64  `db:"id" json:"id"`
+	CirculationActuatorID *int64 `db:"circulation_actuator_id" json:"circulation_actuator_id"`
+}
+
+// Phase 216 WS7 — wire (or clear) the reservoir's circulation pump. Used both
+// as the WS2 dosing-session default and the WS7 idle-maintenance target.
+func (q *Queries) UpdateReservoirCirculationActuator(ctx context.Context, arg UpdateReservoirCirculationActuatorParams) (Gr33nfertigationReservoir, error) {
+	row := q.db.QueryRow(ctx, updateReservoirCirculationActuator, arg.ID, arg.CirculationActuatorID)
+	var i Gr33nfertigationReservoir
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ZoneID,
+		&i.Name,
+		&i.Description,
+		&i.CapacityLiters,
+		&i.CurrentVolumeLiters,
+		&i.Status,
+		&i.EcSensorID,
+		&i.PhSensorID,
+		&i.TempSensorID,
+		&i.WaterLevelSensorID,
+		&i.DeliveryActuatorID,
+		&i.CirculationActuatorID,
 		&i.LastEcMscm,
 		&i.LastPh,
 		&i.LastReadingTime,

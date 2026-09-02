@@ -415,6 +415,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("GET /fertigation/programs/{rid}/water-status", jwt(http.HandlerFunc(fertigation.WaterStatus)))
 	// Phase 39 WS6 — set base water EC on reservoir
 	mux.Handle("PATCH /fertigation/reservoirs/{rid}/base-water", jwt(http.HandlerFunc(fertigation.SetReservoirBaseWater)))
+	// Phase 216 WS7 — wire the reservoir's circulation pump (dosing default + idle-maintenance target)
+	mux.Handle("PATCH /fertigation/reservoirs/{rid}/circulation-actuator", jwt(http.HandlerFunc(fertigation.SetReservoirCirculationActuator)))
 
 	mux.Handle("GET /farms/{id}/crop-cycles", jwt(http.HandlerFunc(cropcycle.List)))
 	mux.Handle("POST /farms/{id}/crop-cycles", jwt(http.HandlerFunc(cropcycle.Create)))

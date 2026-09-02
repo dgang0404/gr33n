@@ -2292,26 +2292,27 @@ type Gr33nfertigationProgram struct {
 }
 
 type Gr33nfertigationReservoir struct {
-	ID                  int64                               `db:"id" json:"id"`
-	FarmID              int64                               `db:"farm_id" json:"farm_id"`
-	ZoneID              *int64                              `db:"zone_id" json:"zone_id"`
-	Name                string                              `db:"name" json:"name"`
-	Description         *string                             `db:"description" json:"description"`
-	CapacityLiters      pgtype.Numeric                      `db:"capacity_liters" json:"capacity_liters"`
-	CurrentVolumeLiters pgtype.Numeric                      `db:"current_volume_liters" json:"current_volume_liters"`
-	Status              Gr33nfertigationReservoirStatusEnum `db:"status" json:"status"`
-	EcSensorID          *int64                              `db:"ec_sensor_id" json:"ec_sensor_id"`
-	PhSensorID          *int64                              `db:"ph_sensor_id" json:"ph_sensor_id"`
-	TempSensorID        *int64                              `db:"temp_sensor_id" json:"temp_sensor_id"`
-	WaterLevelSensorID  *int64                              `db:"water_level_sensor_id" json:"water_level_sensor_id"`
-	DeliveryActuatorID  *int64                              `db:"delivery_actuator_id" json:"delivery_actuator_id"`
-	LastEcMscm          pgtype.Numeric                      `db:"last_ec_mscm" json:"last_ec_mscm"`
-	LastPh              pgtype.Numeric                      `db:"last_ph" json:"last_ph"`
-	LastReadingTime     pgtype.Timestamptz                  `db:"last_reading_time" json:"last_reading_time"`
-	Metadata            json.RawMessage                     `db:"metadata" json:"metadata"`
-	CreatedAt           time.Time                           `db:"created_at" json:"created_at"`
-	UpdatedAt           time.Time                           `db:"updated_at" json:"updated_at"`
-	DeletedAt           pgtype.Timestamptz                  `db:"deleted_at" json:"deleted_at"`
+	ID                    int64                               `db:"id" json:"id"`
+	FarmID                int64                               `db:"farm_id" json:"farm_id"`
+	ZoneID                *int64                              `db:"zone_id" json:"zone_id"`
+	Name                  string                              `db:"name" json:"name"`
+	Description           *string                             `db:"description" json:"description"`
+	CapacityLiters        pgtype.Numeric                      `db:"capacity_liters" json:"capacity_liters"`
+	CurrentVolumeLiters   pgtype.Numeric                      `db:"current_volume_liters" json:"current_volume_liters"`
+	Status                Gr33nfertigationReservoirStatusEnum `db:"status" json:"status"`
+	EcSensorID            *int64                              `db:"ec_sensor_id" json:"ec_sensor_id"`
+	PhSensorID            *int64                              `db:"ph_sensor_id" json:"ph_sensor_id"`
+	TempSensorID          *int64                              `db:"temp_sensor_id" json:"temp_sensor_id"`
+	WaterLevelSensorID    *int64                              `db:"water_level_sensor_id" json:"water_level_sensor_id"`
+	DeliveryActuatorID    *int64                              `db:"delivery_actuator_id" json:"delivery_actuator_id"`
+	CirculationActuatorID *int64                              `db:"circulation_actuator_id" json:"circulation_actuator_id"`
+	LastEcMscm            pgtype.Numeric                      `db:"last_ec_mscm" json:"last_ec_mscm"`
+	LastPh                pgtype.Numeric                      `db:"last_ph" json:"last_ph"`
+	LastReadingTime       pgtype.Timestamptz                  `db:"last_reading_time" json:"last_reading_time"`
+	Metadata              json.RawMessage                     `db:"metadata" json:"metadata"`
+	CreatedAt             time.Time                           `db:"created_at" json:"created_at"`
+	UpdatedAt             time.Time                           `db:"updated_at" json:"updated_at"`
+	DeletedAt             pgtype.Timestamptz                  `db:"deleted_at" json:"deleted_at"`
 }
 
 type Gr33nnaturalfarmingApplicationRecipe struct {
