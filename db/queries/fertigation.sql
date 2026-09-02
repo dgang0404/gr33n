@@ -186,3 +186,12 @@ INSERT INTO gr33nfertigation.mixing_event_components (
     volume_added_ml, dilution_ratio, notes
 ) VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
+
+-- name: UpdateMixingEventFinal :one
+-- Phase 216 WS2 — the dosing session writes back the finished reading once
+-- its state machine reaches 'done'; mixing_events stays the append-once record.
+UPDATE gr33nfertigation.mixing_events
+SET final_ec_mscm = $2, final_ph = $3, ec_target_met = $4
+WHERE id = $1
+RETURNING *;
+

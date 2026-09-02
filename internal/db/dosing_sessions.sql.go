@@ -15,7 +15,7 @@ const abortDosingSession = `-- name: AbortDosingSession :one
 UPDATE gr33nfertigation.dosing_sessions
 SET status = 'aborted', next_action_at = NULL, completed_at = NOW(), aborted_reason = $2
 WHERE id = $1
-RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
+RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
 `
 
 type AbortDosingSessionParams struct {
@@ -41,6 +41,7 @@ func (q *Queries) AbortDosingSession(ctx context.Context, arg AbortDosingSession
 		&i.SettleSeconds,
 		&i.SamplesPerCycle,
 		&i.SamplesCollectedThisCycle,
+		&i.SamplesSumEcMscm,
 		&i.LastSampleEcMscm,
 		&i.LastSampleAvgEcMscm,
 		&i.NoImprovementCycles,
@@ -59,7 +60,7 @@ const advanceDosingSessionState = `-- name: AdvanceDosingSessionState :one
 UPDATE gr33nfertigation.dosing_sessions
 SET status = $2, next_action_at = $3
 WHERE id = $1
-RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
+RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
 `
 
 type AdvanceDosingSessionStateParams struct {
@@ -87,6 +88,7 @@ func (q *Queries) AdvanceDosingSessionState(ctx context.Context, arg AdvanceDosi
 		&i.SettleSeconds,
 		&i.SamplesPerCycle,
 		&i.SamplesCollectedThisCycle,
+		&i.SamplesSumEcMscm,
 		&i.LastSampleEcMscm,
 		&i.LastSampleAvgEcMscm,
 		&i.NoImprovementCycles,
@@ -105,7 +107,7 @@ const completeDosingSession = `-- name: CompleteDosingSession :one
 UPDATE gr33nfertigation.dosing_sessions
 SET status = 'done', next_action_at = NULL, completed_at = NOW()
 WHERE id = $1
-RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
+RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
 `
 
 func (q *Queries) CompleteDosingSession(ctx context.Context, id int64) (Gr33nfertigationDosingSession, error) {
@@ -126,6 +128,7 @@ func (q *Queries) CompleteDosingSession(ctx context.Context, id int64) (Gr33nfer
 		&i.SettleSeconds,
 		&i.SamplesPerCycle,
 		&i.SamplesCollectedThisCycle,
+		&i.SamplesSumEcMscm,
 		&i.LastSampleEcMscm,
 		&i.LastSampleAvgEcMscm,
 		&i.NoImprovementCycles,
@@ -151,7 +154,7 @@ INSERT INTO gr33nfertigation.dosing_sessions (
     $5, $6, $7, $8,
     $9, $10, $11
 )
-RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
+RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
 `
 
 type CreateDosingSessionParams struct {
@@ -201,6 +204,7 @@ func (q *Queries) CreateDosingSession(ctx context.Context, arg CreateDosingSessi
 		&i.SettleSeconds,
 		&i.SamplesPerCycle,
 		&i.SamplesCollectedThisCycle,
+		&i.SamplesSumEcMscm,
 		&i.LastSampleEcMscm,
 		&i.LastSampleAvgEcMscm,
 		&i.NoImprovementCycles,
@@ -219,9 +223,10 @@ const evaluateDosingSessionCycle = `-- name: EvaluateDosingSessionCycle :one
 UPDATE gr33nfertigation.dosing_sessions
 SET last_sample_avg_ec_mscm = $2,
     samples_collected_this_cycle = 0,
+    samples_sum_ec_mscm = 0,
     no_improvement_cycles = $3
 WHERE id = $1
-RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
+RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
 `
 
 type EvaluateDosingSessionCycleParams struct {
@@ -231,7 +236,7 @@ type EvaluateDosingSessionCycleParams struct {
 }
 
 // Evaluating state: record this cycle's average, reset the per-cycle sample
-// counter, and update the fouled-sensor counter (no_improvement_cycles is
+// counter/sum, and update the fouled-sensor counter (no_improvement_cycles is
 // computed by the caller since it depends on the previous average).
 func (q *Queries) EvaluateDosingSessionCycle(ctx context.Context, arg EvaluateDosingSessionCycleParams) (Gr33nfertigationDosingSession, error) {
 	row := q.db.QueryRow(ctx, evaluateDosingSessionCycle, arg.ID, arg.LastSampleAvgEcMscm, arg.NoImprovementCycles)
@@ -251,6 +256,7 @@ func (q *Queries) EvaluateDosingSessionCycle(ctx context.Context, arg EvaluateDo
 		&i.SettleSeconds,
 		&i.SamplesPerCycle,
 		&i.SamplesCollectedThisCycle,
+		&i.SamplesSumEcMscm,
 		&i.LastSampleEcMscm,
 		&i.LastSampleAvgEcMscm,
 		&i.NoImprovementCycles,
@@ -266,7 +272,7 @@ func (q *Queries) EvaluateDosingSessionCycle(ctx context.Context, arg EvaluateDo
 }
 
 const getDosingSessionByID = `-- name: GetDosingSessionByID :one
-SELECT id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at FROM gr33nfertigation.dosing_sessions
+SELECT id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at FROM gr33nfertigation.dosing_sessions
 WHERE id = $1
 `
 
@@ -288,6 +294,7 @@ func (q *Queries) GetDosingSessionByID(ctx context.Context, id int64) (Gr33nfert
 		&i.SettleSeconds,
 		&i.SamplesPerCycle,
 		&i.SamplesCollectedThisCycle,
+		&i.SamplesSumEcMscm,
 		&i.LastSampleEcMscm,
 		&i.LastSampleAvgEcMscm,
 		&i.NoImprovementCycles,
@@ -303,7 +310,7 @@ func (q *Queries) GetDosingSessionByID(ctx context.Context, id int64) (Gr33nfert
 }
 
 const getDosingSessionByMixingEventID = `-- name: GetDosingSessionByMixingEventID :one
-SELECT id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at FROM gr33nfertigation.dosing_sessions
+SELECT id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at FROM gr33nfertigation.dosing_sessions
 WHERE mixing_event_id = $1
 `
 
@@ -325,6 +332,7 @@ func (q *Queries) GetDosingSessionByMixingEventID(ctx context.Context, mixingEve
 		&i.SettleSeconds,
 		&i.SamplesPerCycle,
 		&i.SamplesCollectedThisCycle,
+		&i.SamplesSumEcMscm,
 		&i.LastSampleEcMscm,
 		&i.LastSampleAvgEcMscm,
 		&i.NoImprovementCycles,
@@ -340,7 +348,7 @@ func (q *Queries) GetDosingSessionByMixingEventID(ctx context.Context, mixingEve
 }
 
 const listActiveDosingSessionsByFarm = `-- name: ListActiveDosingSessionsByFarm :many
-SELECT id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at FROM gr33nfertigation.dosing_sessions
+SELECT id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at FROM gr33nfertigation.dosing_sessions
 WHERE farm_id = $1 AND status NOT IN ('done', 'aborted')
 ORDER BY started_at DESC
 `
@@ -369,6 +377,7 @@ func (q *Queries) ListActiveDosingSessionsByFarm(ctx context.Context, farmID int
 			&i.SettleSeconds,
 			&i.SamplesPerCycle,
 			&i.SamplesCollectedThisCycle,
+			&i.SamplesSumEcMscm,
 			&i.LastSampleEcMscm,
 			&i.LastSampleAvgEcMscm,
 			&i.NoImprovementCycles,
@@ -391,7 +400,7 @@ func (q *Queries) ListActiveDosingSessionsByFarm(ctx context.Context, farmID int
 }
 
 const listDueDosingSessions = `-- name: ListDueDosingSessions :many
-SELECT id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at FROM gr33nfertigation.dosing_sessions
+SELECT id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at FROM gr33nfertigation.dosing_sessions
 WHERE status NOT IN ('done', 'aborted')
   AND next_action_at IS NOT NULL
   AND next_action_at <= NOW()
@@ -423,6 +432,7 @@ func (q *Queries) ListDueDosingSessions(ctx context.Context) ([]Gr33nfertigation
 			&i.SettleSeconds,
 			&i.SamplesPerCycle,
 			&i.SamplesCollectedThisCycle,
+			&i.SamplesSumEcMscm,
 			&i.LastSampleEcMscm,
 			&i.LastSampleAvgEcMscm,
 			&i.NoImprovementCycles,
@@ -450,7 +460,7 @@ SET total_dosed_ml = total_dosed_ml + $2,
     status = $3,
     next_action_at = $4
 WHERE id = $1
-RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
+RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
 `
 
 type RecordDosingSessionDoseParams struct {
@@ -484,6 +494,7 @@ func (q *Queries) RecordDosingSessionDose(ctx context.Context, arg RecordDosingS
 		&i.SettleSeconds,
 		&i.SamplesPerCycle,
 		&i.SamplesCollectedThisCycle,
+		&i.SamplesSumEcMscm,
 		&i.LastSampleEcMscm,
 		&i.LastSampleAvgEcMscm,
 		&i.NoImprovementCycles,
@@ -501,9 +512,10 @@ func (q *Queries) RecordDosingSessionDose(ctx context.Context, arg RecordDosingS
 const recordDosingSessionSample = `-- name: RecordDosingSessionSample :one
 UPDATE gr33nfertigation.dosing_sessions
 SET samples_collected_this_cycle = samples_collected_this_cycle + 1,
+    samples_sum_ec_mscm = samples_sum_ec_mscm + $2,
     last_sample_ec_mscm = $2
 WHERE id = $1
-RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
+RETURNING id, mixing_event_id, farm_id, reservoir_id, circulation_actuator_id, status, next_action_at, dose_increment_ml, max_total_dose_ml, total_dosed_ml, circulate_seconds, settle_seconds, samples_per_cycle, samples_collected_this_cycle, samples_sum_ec_mscm, last_sample_ec_mscm, last_sample_avg_ec_mscm, no_improvement_cycles, max_no_improvement_cycles, aborted_reason, started_at, completed_at, metadata, created_at, updated_at
 `
 
 type RecordDosingSessionSampleParams struct {
@@ -511,7 +523,8 @@ type RecordDosingSessionSampleParams struct {
 	LastSampleEcMscm pgtype.Numeric `db:"last_sample_ec_mscm" json:"last_sample_ec_mscm"`
 }
 
-// Sampling state: bump the collected-this-cycle counter and stash the raw reading.
+// Sampling state: bump the collected-this-cycle counter, stash the raw
+// reading, and add it to the running sum the evaluate step averages from.
 func (q *Queries) RecordDosingSessionSample(ctx context.Context, arg RecordDosingSessionSampleParams) (Gr33nfertigationDosingSession, error) {
 	row := q.db.QueryRow(ctx, recordDosingSessionSample, arg.ID, arg.LastSampleEcMscm)
 	var i Gr33nfertigationDosingSession
@@ -530,6 +543,7 @@ func (q *Queries) RecordDosingSessionSample(ctx context.Context, arg RecordDosin
 		&i.SettleSeconds,
 		&i.SamplesPerCycle,
 		&i.SamplesCollectedThisCycle,
+		&i.SamplesSumEcMscm,
 		&i.LastSampleEcMscm,
 		&i.LastSampleAvgEcMscm,
 		&i.NoImprovementCycles,

@@ -43,20 +43,23 @@ WHERE id = $1
 RETURNING *;
 
 -- name: RecordDosingSessionSample :one
--- Sampling state: bump the collected-this-cycle counter and stash the raw reading.
+-- Sampling state: bump the collected-this-cycle counter, stash the raw
+-- reading, and add it to the running sum the evaluate step averages from.
 UPDATE gr33nfertigation.dosing_sessions
 SET samples_collected_this_cycle = samples_collected_this_cycle + 1,
+    samples_sum_ec_mscm = samples_sum_ec_mscm + $2,
     last_sample_ec_mscm = $2
 WHERE id = $1
 RETURNING *;
 
 -- name: EvaluateDosingSessionCycle :one
 -- Evaluating state: record this cycle's average, reset the per-cycle sample
--- counter, and update the fouled-sensor counter (no_improvement_cycles is
+-- counter/sum, and update the fouled-sensor counter (no_improvement_cycles is
 -- computed by the caller since it depends on the previous average).
 UPDATE gr33nfertigation.dosing_sessions
 SET last_sample_avg_ec_mscm = $2,
     samples_collected_this_cycle = 0,
+    samples_sum_ec_mscm = 0,
     no_improvement_cycles = $3
 WHERE id = $1
 RETURNING *;

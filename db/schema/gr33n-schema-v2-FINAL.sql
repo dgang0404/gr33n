@@ -1671,6 +1671,7 @@ CREATE TABLE IF NOT EXISTS gr33nfertigation.dosing_sessions (
     settle_seconds                INTEGER NOT NULL DEFAULT 30 CHECK (settle_seconds >= 0),
     samples_per_cycle             INTEGER NOT NULL DEFAULT 3 CHECK (samples_per_cycle >= 1),
     samples_collected_this_cycle  INTEGER NOT NULL DEFAULT 0 CHECK (samples_collected_this_cycle >= 0),
+    samples_sum_ec_mscm           NUMERIC(12,3) NOT NULL DEFAULT 0,
     last_sample_ec_mscm           NUMERIC(5,3) CHECK (last_sample_ec_mscm >= 0),
     last_sample_avg_ec_mscm       NUMERIC(5,3) CHECK (last_sample_avg_ec_mscm >= 0),
     no_improvement_cycles         INTEGER NOT NULL DEFAULT 0 CHECK (no_improvement_cycles >= 0),

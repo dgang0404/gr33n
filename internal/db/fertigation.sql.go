@@ -1059,6 +1059,54 @@ func (q *Queries) MarkProgramTriggered(ctx context.Context, arg MarkProgramTrigg
 	return i, err
 }
 
+const updateMixingEventFinal = `-- name: UpdateMixingEventFinal :one
+UPDATE gr33nfertigation.mixing_events
+SET final_ec_mscm = $2, final_ph = $3, ec_target_met = $4
+WHERE id = $1
+RETURNING id, farm_id, reservoir_id, program_id, mixed_by_user_id, mixed_at, water_volume_liters, water_source, water_ec_mscm, water_ph, final_ec_mscm, final_ph, final_temp_celsius, ec_target_id, ec_target_met, notes, observations, metadata, created_at
+`
+
+type UpdateMixingEventFinalParams struct {
+	ID          int64          `db:"id" json:"id"`
+	FinalEcMscm pgtype.Numeric `db:"final_ec_mscm" json:"final_ec_mscm"`
+	FinalPh     pgtype.Numeric `db:"final_ph" json:"final_ph"`
+	EcTargetMet *bool          `db:"ec_target_met" json:"ec_target_met"`
+}
+
+// Phase 216 WS2 — the dosing session writes back the finished reading once
+// its state machine reaches 'done'; mixing_events stays the append-once record.
+func (q *Queries) UpdateMixingEventFinal(ctx context.Context, arg UpdateMixingEventFinalParams) (Gr33nfertigationMixingEvent, error) {
+	row := q.db.QueryRow(ctx, updateMixingEventFinal,
+		arg.ID,
+		arg.FinalEcMscm,
+		arg.FinalPh,
+		arg.EcTargetMet,
+	)
+	var i Gr33nfertigationMixingEvent
+	err := row.Scan(
+		&i.ID,
+		&i.FarmID,
+		&i.ReservoirID,
+		&i.ProgramID,
+		&i.MixedByUserID,
+		&i.MixedAt,
+		&i.WaterVolumeLiters,
+		&i.WaterSource,
+		&i.WaterEcMscm,
+		&i.WaterPh,
+		&i.FinalEcMscm,
+		&i.FinalPh,
+		&i.FinalTempCelsius,
+		&i.EcTargetID,
+		&i.EcTargetMet,
+		&i.Notes,
+		&i.Observations,
+		&i.Metadata,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const updateProgram = `-- name: UpdateProgram :one
 UPDATE gr33nfertigation.programs
 SET name = $2, description = $3, reservoir_id = $4,

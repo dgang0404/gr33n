@@ -2175,6 +2175,7 @@ type Gr33nfertigationDosingSession struct {
 	SettleSeconds             int32                                   `db:"settle_seconds" json:"settle_seconds"`
 	SamplesPerCycle           int32                                   `db:"samples_per_cycle" json:"samples_per_cycle"`
 	SamplesCollectedThisCycle int32                                   `db:"samples_collected_this_cycle" json:"samples_collected_this_cycle"`
+	SamplesSumEcMscm          pgtype.Numeric                          `db:"samples_sum_ec_mscm" json:"samples_sum_ec_mscm"`
 	LastSampleEcMscm          pgtype.Numeric                          `db:"last_sample_ec_mscm" json:"last_sample_ec_mscm"`
 	LastSampleAvgEcMscm       pgtype.Numeric                          `db:"last_sample_avg_ec_mscm" json:"last_sample_avg_ec_mscm"`
 	NoImprovementCycles       int32                                   `db:"no_improvement_cycles" json:"no_improvement_cycles"`

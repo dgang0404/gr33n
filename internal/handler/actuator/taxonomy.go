@@ -60,6 +60,10 @@ type ActuatorConfig struct {
 	MaxRunSeconds *int `json:"max_run_seconds,omitempty"`
 	// PercentOpenSupported signals the Pi can control ridge_vent to a percentage.
 	PercentOpenSupported *bool `json:"percent_open_supported,omitempty"`
+	// MlPerSecond is the calibrated dosing-pump flow rate (Phase 216), used
+	// to convert a dose_increment_ml into a pulse duration_seconds. Peristaltic
+	// pumps vary batch to batch — this must be measured per pump, not assumed.
+	MlPerSecond *float64 `json:"ml_per_second,omitempty"`
 }
 
 // ValidCommands returns the valid command strings for the given actuator_type.

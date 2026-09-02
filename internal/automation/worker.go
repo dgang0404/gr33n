@@ -204,6 +204,11 @@ func (w *Worker) runTick(ctx context.Context) {
 	// Phase 114 WS1 — stale heartbeat → offline + alert.
 	w.TickDeviceHealth(ctx)
 
+	// Phase 216 WS2 — dose/circulate/settle/sample/evaluate loop for active
+	// dosing_sessions. Cheap no-op when there are no due sessions (the SQL
+	// filter does the work), safe to run every tick like TickLowStockAlerts.
+	w.TickDosingSessions(ctx)
+
 	// Phase 20.7 WS4 — once-per-day electricity rollup. We target
 	// the *previous* UTC calendar day so all its events have landed.
 	// The first tick after 01:00 UTC wins; subsequent ticks see

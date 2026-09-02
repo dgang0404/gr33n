@@ -207,7 +207,7 @@ type Querier interface {
 	// ============================================================
 	EnqueueDeviceCommand(ctx context.Context, arg EnqueueDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
 	// Evaluating state: record this cycle's average, reset the per-cycle sample
-	// counter, and update the fouled-sensor counter (no_improvement_cycles is
+	// counter/sum, and update the fouled-sensor counter (no_improvement_cycles is
 	// computed by the caller since it depends on the previous average).
 	EvaluateDosingSessionCycle(ctx context.Context, arg EvaluateDosingSessionCycleParams) (Gr33nfertigationDosingSession, error)
 	ExpireStaleGuardianProposals(ctx context.Context) error
@@ -701,7 +701,8 @@ type Querier interface {
 	RecalcTaskTimeSpentMinutes(ctx context.Context, taskID int64) error
 	// Dosing state: add to the running total after a pump-fire is queued.
 	RecordDosingSessionDose(ctx context.Context, arg RecordDosingSessionDoseParams) (Gr33nfertigationDosingSession, error)
-	// Sampling state: bump the collected-this-cycle counter and stash the raw reading.
+	// Sampling state: bump the collected-this-cycle counter, stash the raw
+	// reading, and add it to the running sum the evaluate step averages from.
 	RecordDosingSessionSample(ctx context.Context, arg RecordDosingSessionSampleParams) (Gr33nfertigationDosingSession, error)
 	RejectInsertCommonsBundle(ctx context.Context, arg RejectInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
 	RemoveFarmMember(ctx context.Context, arg RemoveFarmMemberParams) error
@@ -780,6 +781,9 @@ type Querier interface {
 	UpdateLightingProgram(ctx context.Context, arg UpdateLightingProgramParams) (Gr33ncoreLightingProgram, error)
 	UpdateLightingProgramActive(ctx context.Context, arg UpdateLightingProgramActiveParams) (Gr33ncoreLightingProgram, error)
 	UpdateLightingProgramSchedules(ctx context.Context, arg UpdateLightingProgramSchedulesParams) (Gr33ncoreLightingProgram, error)
+	// Phase 216 WS2 — the dosing session writes back the finished reading once
+	// its state machine reaches 'done'; mixing_events stays the append-once record.
+	UpdateMixingEventFinal(ctx context.Context, arg UpdateMixingEventFinalParams) (Gr33nfertigationMixingEvent, error)
 	UpdateNotificationTemplate(ctx context.Context, arg UpdateNotificationTemplateParams) (Gr33ncoreNotificationTemplate, error)
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Gr33ncoreOrganization, error)
 	UpdatePlant(ctx context.Context, arg UpdatePlantParams) (Gr33ncropsPlant, error)
