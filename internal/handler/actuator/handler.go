@@ -242,7 +242,9 @@ func (h *Handler) UpdateState(w http.ResponseWriter, r *http.Request) {
 
 	var stateNumeric pgtype.Numeric
 	if body.StateNumeric != nil {
-		if err := stateNumeric.Scan(*body.StateNumeric); err != nil {
+		// pgtype.Numeric.Scan only accepts nil/string (not a raw float64),
+		// so it must be formatted first or every toggle 400s.
+		if err := stateNumeric.Scan(strconv.FormatFloat(*body.StateNumeric, 'f', -1, 64)); err != nil {
 			httputil.WriteError(w, http.StatusBadRequest, "invalid state_numeric")
 			return
 		}

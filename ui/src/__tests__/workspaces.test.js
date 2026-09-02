@@ -31,7 +31,6 @@ describe('Phase 68 / 78 WS1 — workspaces model', () => {
     expect(workspaceFor('/feeding')).toMatchObject({ route: '/feed-water', tab: 'daily' })
     expect(workspaceFor('/fertigation')).toMatchObject({ route: '/feed-water', tab: 'advanced' })
     expect(workspaceFor('/costs')).toMatchObject({ route: '/money', tab: 'ledger' })
-    expect(workspaceFor('/pi-setup')).toMatchObject({ route: '/hardware', tab: 'reference' })
   })
 
   it('canonicalSidebarPath maps legacy routes to workspace sidebar entries', () => {

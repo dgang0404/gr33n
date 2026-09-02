@@ -9,6 +9,7 @@
 package devicecmd
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
@@ -275,9 +277,12 @@ func (h *Handler) Ack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// When a command completes, clear the legacy pending_command mirror so
-	// old Pi clients don't re-execute it.
+	// old Pi clients don't re-execute it, and sync current_state_text so
+	// UI switches (ZoneHardwarePanel, ActuatorCard) reflect what actually ran
+	// — the Pi client never PATCHes /actuators/{id}/state itself.
 	if body.Status == "completed" {
 		_ = h.q.ClearDevicePendingCommand(ctx, deviceID)
+		h.syncActuatorState(ctx, cmd)
 	}
 	if body.Status == "failed" {
 		systemlog.Submit(ctx, h.q, systemlog.FarmIDPtr(device.FarmID), commontypes.LogLevelWarning,
@@ -286,6 +291,41 @@ func (h *Handler) Ack(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, cmd)
+}
+
+// syncActuatorState reflects a completed actuator/pulse command's on/off
+// intent onto gr33ncore.actuators.current_state_text. Pulse "off" reverts are
+// timed locally by the Pi client with no second ack, so a pulse's state stays
+// "online" in the DB until the next explicit command — acceptable for now
+// (matches the existing simulation-mode ceiling noted in automation/worker.go).
+func (h *Handler) syncActuatorState(ctx context.Context, cmd db.Gr33ncoreDeviceCommand) {
+	if cmd.ActuatorID == nil || (cmd.CommandType != "actuator" && cmd.CommandType != "pulse") {
+		return
+	}
+	var payload struct {
+		Command string `json:"command"`
+	}
+	if err := json.Unmarshal(cmd.Payload, &payload); err != nil {
+		return
+	}
+	var stateText, numericStr string
+	switch acthandler.NormalizeCommand(payload.Command) {
+	case "on":
+		stateText, numericStr = "online", "1"
+	case "off":
+		stateText, numericStr = "offline", "0"
+	default:
+		return
+	}
+	var numeric pgtype.Numeric
+	if err := numeric.Scan(numericStr); err != nil {
+		return
+	}
+	_, _ = h.q.UpdateActuatorState(ctx, db.UpdateActuatorStateParams{
+		ID:                  *cmd.ActuatorID,
+		CurrentStateNumeric: numeric,
+		CurrentStateText:    &stateText,
+	})
 }
 
 // GET /devices/{id}/commands

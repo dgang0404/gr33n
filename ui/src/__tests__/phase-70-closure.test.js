@@ -20,7 +20,6 @@ describe('Phase 70 — GPIO board closure', () => {
     const hw = readFileSync(join(uiSrc, 'views/workspaces/HardwareWorkspace.vue'), 'utf8')
     expect(hw).toContain('GpioBoard')
     expect(hw).not.toContain('HardwareBoardStub')
-    expect(hw).toContain('embedded')
   })
 
   it('PiSetupGuide uses loadAll and embedded reference banner', () => {

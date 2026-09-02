@@ -168,15 +168,8 @@ export const WORKSPACES = {
         label: 'Pi devices',
         description: 'Edge devices registered on this farm — API keys, last seen, and links to zone wiring.',
       },
-      {
-        id: 'reference',
-        label: 'Wiring guide',
-        description: 'Pi + HAT setup steps, DIP switches, and safe wiring practices before you energize relays.',
-      },
     ],
-    absorbs: {
-      '/pi-setup': { tab: 'reference' },
-    },
+    absorbs: {},
   },
   feedwater: {
     label: 'Feed & water',

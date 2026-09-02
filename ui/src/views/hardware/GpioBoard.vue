@@ -5,7 +5,7 @@
       <p class="text-sm text-zinc-400 leading-relaxed max-w-2xl">
         Live pin and relay map for this farm — what each channel is wired to, which zone it serves, and current state.
         For typical HAT wiring diagrams, see the
-        <router-link v-nav-hint="'/hardware'" :to="{ path: '/hardware', query: { tab: 'reference' } }" class="text-green-500 hover:text-green-400">Reference</router-link>
+        <router-link v-nav-hint="'/pi-setup'" :to="{ name: 'pi-setup' }" class="text-green-500 hover:text-green-400">Reference</router-link>
         tab.
       </p>
     </header>

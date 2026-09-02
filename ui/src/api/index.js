@@ -54,6 +54,7 @@ function shouldLogApiError(err) {
   if (err.response?.status === 401) return false
   if (err.response?.status === 404 && url.includes('/readings/latest')) return false
   if (err.response?.status === 404 && url.includes('/layout-background')) return false
+  if (err.response?.status === 404 && url.includes('/plants/')) return false
   if (url.includes('/v1/chat/sessions/') && url.endsWith('/close')) return false
   if (err.code === 'ERR_CANCELED' || axios.isCancel?.(err)) return false
   if (/abort|canceled/i.test(String(err.message || ''))) return false

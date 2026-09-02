@@ -309,19 +309,8 @@
       </section>
     </div>
 
-    <!-- Sensor tiles -->
-    <section>
-      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Live Sensors</h3>
-      <div v-if="store.sensors.length" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
-        <SensorTile v-for="s in store.sensors" :key="s.id"
-          :sensor="s" :reading="store.readings[s.id]" />
-      </div>
-      <EmptyStateHint
-        v-else
-        reason="no_telemetry"
-        message="No sensors found for this farm — readings appear once hardware is registered and posting."
-      />
-    </section>
+    <!-- Sensor tiles moved out of this block + to the bottom of the page (Phase 216 —
+         was buried 3 levels deep here, now its own top-level collapsible section). -->
 
     <!-- Zone cards removed — FarmCanvas is the hero (Phase 166) -->
 
@@ -337,6 +326,24 @@
       </div>
     </section>
       </div>
+    </details>
+
+    <!-- Live Sensors — own collapsible section, bottom of Today tab (Phase 216) -->
+    <details class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 group" data-test="dashboard-live-sensors">
+      <summary class="text-xs font-semibold text-gray-500 uppercase tracking-widest cursor-pointer list-none flex items-center justify-between">
+        <span>Live Sensors ({{ store.sensors.length }})</span>
+        <span class="text-zinc-600 group-open:rotate-180 transition-transform">▾</span>
+      </summary>
+      <div v-if="store.sensors.length" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 mt-4">
+        <SensorTile v-for="s in store.sensors" :key="s.id"
+          :sensor="s" :reading="store.readings[s.id]" />
+      </div>
+      <EmptyStateHint
+        v-else
+        reason="no_telemetry"
+        message="No sensors found for this farm — readings appear once hardware is registered and posting."
+        class="mt-4"
+      />
     </details>
 
   </div>

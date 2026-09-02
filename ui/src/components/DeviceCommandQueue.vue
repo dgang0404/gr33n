@@ -1,11 +1,14 @@
 <template>
-  <div v-if="expanded || commands.length" class="rounded-lg border border-zinc-800/80 bg-zinc-950/30 px-3 py-2 space-y-2" data-test="device-command-queue">
+  <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/30 px-3 py-2 space-y-2" data-test="device-command-queue">
     <button
       type="button"
       class="flex items-center justify-between w-full text-left text-[10px] uppercase tracking-wide text-zinc-500 hover:text-zinc-300"
       @click="expanded = !expanded"
     >
-      <span>Command queue ({{ commands.length }})</span>
+      <span>
+        Command queue ({{ commands.length }})
+        <span v-if="pendingCount" class="text-amber-400 normal-case tracking-normal ml-1">· {{ pendingCount }} pending</span>
+      </span>
       <span>{{ expanded ? '▾' : '▸' }}</span>
     </button>
     <div v-if="expanded" class="space-y-1 max-h-40 overflow-y-auto">
@@ -38,7 +41,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useFarmStore } from '../stores/farm'
 
 const props = defineProps({
@@ -49,6 +52,10 @@ const store = useFarmStore()
 const commands = ref([])
 const loading = ref(false)
 const expanded = ref(false)
+const pendingCount = computed(
+  () => commands.value.filter(c => c.status === 'pending' || c.status === 'in_progress').length,
+)
+let pollTimer = null
 
 async function refresh() {
   if (!props.deviceId) return
@@ -86,6 +93,14 @@ function statusClass(status) {
   return 'text-zinc-500'
 }
 
-onMounted(refresh)
+onMounted(() => {
+  refresh()
+  // Phase 216 — poll so a stale backlog (e.g. device just reconnected) surfaces
+  // without the operator needing to manually reopen the panel.
+  pollTimer = setInterval(refresh, 30000)
+})
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer)
+})
 watch(() => props.deviceId, refresh)
 </script>

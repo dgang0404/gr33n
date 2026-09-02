@@ -665,9 +665,24 @@ async function loadEvents() {
 }
 
 async function toggleActuator(a) {
+  // Phase 216 — was PATCH /actuators/{id}/state (DB bookkeeping only, never
+  // reached the Pi). Route through the real device command queue so the
+  // switch actually turns hardware on/off, matching ActuatorCard's ON/OFF buttons.
   toggling.value[a.id] = true
   try {
-    await store.toggleActuator(a.id, a.current_state_text || 'offline')
+    const next = a.current_state_text === 'online' ? 'off' : 'on'
+    await store.enqueueActuatorCommand(a.id, next, `Zone controls: ${next}`)
+    // Optimistic UI flip — queuing succeeded, but the real state only lands in
+    // the DB once the Pi acks the command, which can take a poll interval or
+    // more. Without this the switch looks frozen until a manual page refresh.
+    const idx = store.actuators.findIndex(x => x.id === a.id)
+    if (idx >= 0) {
+      store.actuators[idx] = {
+        ...store.actuators[idx],
+        current_state_text: next === 'on' ? 'online' : 'offline',
+        current_state_numeric: next === 'on' ? 1 : 0,
+      }
+    }
   } finally {
     toggling.value[a.id] = false
   }

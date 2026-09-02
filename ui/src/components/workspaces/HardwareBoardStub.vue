@@ -5,8 +5,8 @@
       Hardware → GPIO board
     </RouterLink>.
     Use
-    <RouterLink v-nav-hint="'/hardware'" :to="{ path: '/hardware', query: { tab: 'reference' } }" class="text-green-500 hover:text-green-400">
-      Wiring guide
+    <RouterLink v-nav-hint="'/pi-setup'" :to="{ name: 'pi-setup' }" class="text-green-500 hover:text-green-400">
+      Pi setup guide
     </RouterLink>
     for pin maps while setting up.
   </p>
