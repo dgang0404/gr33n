@@ -876,6 +876,54 @@ func (ns NullGr33ncoreWeatherDataSourceEnum) Value() (driver.Value, error) {
 	return string(ns.Gr33ncoreWeatherDataSourceEnum), nil
 }
 
+type Gr33nfertigationDosingSessionStatusEnum string
+
+const (
+	Gr33nfertigationDosingSessionStatusEnumIdle        Gr33nfertigationDosingSessionStatusEnum = "idle"
+	Gr33nfertigationDosingSessionStatusEnumCirculating Gr33nfertigationDosingSessionStatusEnum = "circulating"
+	Gr33nfertigationDosingSessionStatusEnumSettling    Gr33nfertigationDosingSessionStatusEnum = "settling"
+	Gr33nfertigationDosingSessionStatusEnumSampling    Gr33nfertigationDosingSessionStatusEnum = "sampling"
+	Gr33nfertigationDosingSessionStatusEnumEvaluating  Gr33nfertigationDosingSessionStatusEnum = "evaluating"
+	Gr33nfertigationDosingSessionStatusEnumDosing      Gr33nfertigationDosingSessionStatusEnum = "dosing"
+	Gr33nfertigationDosingSessionStatusEnumDone        Gr33nfertigationDosingSessionStatusEnum = "done"
+	Gr33nfertigationDosingSessionStatusEnumAborted     Gr33nfertigationDosingSessionStatusEnum = "aborted"
+)
+
+func (e *Gr33nfertigationDosingSessionStatusEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Gr33nfertigationDosingSessionStatusEnum(s)
+	case string:
+		*e = Gr33nfertigationDosingSessionStatusEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Gr33nfertigationDosingSessionStatusEnum: %T", src)
+	}
+	return nil
+}
+
+type NullGr33nfertigationDosingSessionStatusEnum struct {
+	Gr33nfertigationDosingSessionStatusEnum Gr33nfertigationDosingSessionStatusEnum `json:"gr33nfertigation_dosing_session_status_enum"`
+	Valid                                   bool                                    `json:"valid"` // Valid is true if Gr33nfertigationDosingSessionStatusEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGr33nfertigationDosingSessionStatusEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.Gr33nfertigationDosingSessionStatusEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Gr33nfertigationDosingSessionStatusEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGr33nfertigationDosingSessionStatusEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Gr33nfertigationDosingSessionStatusEnum), nil
+}
+
 type Gr33nfertigationGrowthStageEnum string
 
 const (
@@ -2110,6 +2158,33 @@ type Gr33nfertigationCropCycleStageEvent struct {
 	GrowthStage Gr33nfertigationGrowthStageEnum `db:"growth_stage" json:"growth_stage"`
 	EnteredAt   time.Time                       `db:"entered_at" json:"entered_at"`
 	CreatedAt   time.Time                       `db:"created_at" json:"created_at"`
+}
+
+type Gr33nfertigationDosingSession struct {
+	ID                        int64                                   `db:"id" json:"id"`
+	MixingEventID             int64                                   `db:"mixing_event_id" json:"mixing_event_id"`
+	FarmID                    int64                                   `db:"farm_id" json:"farm_id"`
+	ReservoirID               int64                                   `db:"reservoir_id" json:"reservoir_id"`
+	CirculationActuatorID     *int64                                  `db:"circulation_actuator_id" json:"circulation_actuator_id"`
+	Status                    Gr33nfertigationDosingSessionStatusEnum `db:"status" json:"status"`
+	NextActionAt              pgtype.Timestamptz                      `db:"next_action_at" json:"next_action_at"`
+	DoseIncrementMl           pgtype.Numeric                          `db:"dose_increment_ml" json:"dose_increment_ml"`
+	MaxTotalDoseMl            pgtype.Numeric                          `db:"max_total_dose_ml" json:"max_total_dose_ml"`
+	TotalDosedMl              pgtype.Numeric                          `db:"total_dosed_ml" json:"total_dosed_ml"`
+	CirculateSeconds          int32                                   `db:"circulate_seconds" json:"circulate_seconds"`
+	SettleSeconds             int32                                   `db:"settle_seconds" json:"settle_seconds"`
+	SamplesPerCycle           int32                                   `db:"samples_per_cycle" json:"samples_per_cycle"`
+	SamplesCollectedThisCycle int32                                   `db:"samples_collected_this_cycle" json:"samples_collected_this_cycle"`
+	LastSampleEcMscm          pgtype.Numeric                          `db:"last_sample_ec_mscm" json:"last_sample_ec_mscm"`
+	LastSampleAvgEcMscm       pgtype.Numeric                          `db:"last_sample_avg_ec_mscm" json:"last_sample_avg_ec_mscm"`
+	NoImprovementCycles       int32                                   `db:"no_improvement_cycles" json:"no_improvement_cycles"`
+	MaxNoImprovementCycles    int32                                   `db:"max_no_improvement_cycles" json:"max_no_improvement_cycles"`
+	AbortedReason             *string                                 `db:"aborted_reason" json:"aborted_reason"`
+	StartedAt                 time.Time                               `db:"started_at" json:"started_at"`
+	CompletedAt               pgtype.Timestamptz                      `db:"completed_at" json:"completed_at"`
+	Metadata                  json.RawMessage                         `db:"metadata" json:"metadata"`
+	CreatedAt                 time.Time                               `db:"created_at" json:"created_at"`
+	UpdatedAt                 time.Time                               `db:"updated_at" json:"updated_at"`
 }
 
 type Gr33nfertigationEcTarget struct {

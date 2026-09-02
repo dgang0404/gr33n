@@ -13,10 +13,13 @@ import (
 )
 
 type Querier interface {
+	AbortDosingSession(ctx context.Context, arg AbortDosingSessionParams) (Gr33nfertigationDosingSession, error)
 	// Pi-key: marks a command completed or failed and records the result payload.
 	AckDeviceCommand(ctx context.Context, arg AckDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
 	AddFarmMember(ctx context.Context, arg AddFarmMemberParams) (Gr33ncoreFarmMembership, error)
 	AddRecipeComponent(ctx context.Context, arg AddRecipeComponentParams) error
+	// Generic state transition: new status + next wake time, no other fields touched.
+	AdvanceDosingSessionState(ctx context.Context, arg AdvanceDosingSessionStateParams) (Gr33nfertigationDosingSession, error)
 	ApproveInsertCommonsBundle(ctx context.Context, arg ApproveInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
 	ArchiveAnimalGroup(ctx context.Context, arg ArchiveAnimalGroupParams) (Gr33nanimalsAnimalGroup, error)
 	AvgGroundedPromptTokensRecentByFarm(ctx context.Context, farmID *int64) (AvgGroundedPromptTokensRecentByFarmRow, error)
@@ -30,6 +33,7 @@ type Querier interface {
 	// time, not start, so a rate change mid-shift applies to the rest of
 	// the shift, not retroactively.
 	CloseTaskLaborLog(ctx context.Context, arg CloseTaskLaborLogParams) (Gr33ncoreTaskLaborLog, error)
+	CompleteDosingSession(ctx context.Context, id int64) (Gr33nfertigationDosingSession, error)
 	CompleteTaskWithActualTimes(ctx context.Context, arg CompleteTaskWithActualTimesParams) (Gr33ncoreTask, error)
 	ConfirmGuardianProposal(ctx context.Context, arg ConfirmGuardianProposalParams) (Gr33ncoreGuardianActionProposal, error)
 	CountActiveDeviceAPIKeysByDevice(ctx context.Context, deviceID int64) (int64, error)
@@ -99,6 +103,10 @@ type Querier interface {
 	// Queries: gr33ncore.devices
 	// ============================================================
 	CreateDevice(ctx context.Context, arg CreateDeviceParams) (Gr33ncoreDevice, error)
+	// ============================================================
+	// Queries: gr33nfertigation.dosing_sessions (Phase 216 WS1/WS2)
+	// ============================================================
+	CreateDosingSession(ctx context.Context, arg CreateDosingSessionParams) (Gr33nfertigationDosingSession, error)
 	CreateEcTarget(ctx context.Context, arg CreateEcTargetParams) (Gr33nfertigationEcTarget, error)
 	CreateExecutableActionForProgram(ctx context.Context, arg CreateExecutableActionForProgramParams) (Gr33ncoreExecutableAction, error)
 	CreateExecutableActionForRule(ctx context.Context, arg CreateExecutableActionForRuleParams) (Gr33ncoreExecutableAction, error)
@@ -198,6 +206,10 @@ type Querier interface {
 	// Queries: gr33ncore.device_commands (Phase 39 WS1)
 	// ============================================================
 	EnqueueDeviceCommand(ctx context.Context, arg EnqueueDeviceCommandParams) (Gr33ncoreDeviceCommand, error)
+	// Evaluating state: record this cycle's average, reset the per-cycle sample
+	// counter, and update the fouled-sensor counter (no_improvement_cycles is
+	// computed by the caller since it depends on the previous average).
+	EvaluateDosingSessionCycle(ctx context.Context, arg EvaluateDosingSessionCycleParams) (Gr33nfertigationDosingSession, error)
 	ExpireStaleGuardianProposals(ctx context.Context) error
 	FarmModuleIsEnabled(ctx context.Context, arg FarmModuleIsEnabledParams) (bool, error)
 	// Returns the newest summary whose topics overlap any of the requested tags.
@@ -266,6 +278,8 @@ type Querier interface {
 	GetCropProfileStage(ctx context.Context, arg GetCropProfileStageParams) (Gr33ncropsCropProfileStage, error)
 	GetDeviceByID(ctx context.Context, id int64) (Gr33ncoreDevice, error)
 	GetDeviceByUID(ctx context.Context, deviceUid *string) (Gr33ncoreDevice, error)
+	GetDosingSessionByID(ctx context.Context, id int64) (Gr33nfertigationDosingSession, error)
+	GetDosingSessionByMixingEventID(ctx context.Context, mixingEventID int64) (Gr33nfertigationDosingSession, error)
 	// Phase 39 WS2 — needed by the mix dose calculator to read target EC bounds.
 	GetEcTargetByID(ctx context.Context, id int64) (Gr33nfertigationEcTarget, error)
 	GetExecutableActionByID(ctx context.Context, id int64) (Gr33ncoreExecutableAction, error)
@@ -448,6 +462,7 @@ type Querier interface {
 	InsertWeatherData(ctx context.Context, arg InsertWeatherDataParams) (Gr33ncoreWeatherDatum, error)
 	ListActiveAutomationRules(ctx context.Context) ([]Gr33ncoreAutomationRule, error)
 	ListActiveDeviceAPIKeyHashesByDevice(ctx context.Context, deviceID int64) ([]ListActiveDeviceAPIKeyHashesByDeviceRow, error)
+	ListActiveDosingSessionsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationDosingSession, error)
 	// Phase 22 WS1 — feeds the worker's program-tick. Only programs with a
 	// bound schedule are dispatched automatically (unscheduled programs are
 	// template-only and require an explicit "run now" API call, added later).
@@ -532,6 +547,8 @@ type Querier interface {
 	ListDeviceIPEventsByDevice(ctx context.Context, arg ListDeviceIPEventsByDeviceParams) ([]Gr33ncoreDeviceIpEvent, error)
 	ListDevicesByFarm(ctx context.Context, farmID int64) ([]Gr33ncoreDevice, error)
 	ListDevicesByZone(ctx context.Context, zoneID *int64) ([]Gr33ncoreDevice, error)
+	// Worker tick: non-terminal sessions whose next_action_at has arrived.
+	ListDueDosingSessions(ctx context.Context) ([]Gr33nfertigationDosingSession, error)
 	ListEcTargetsByFarm(ctx context.Context, farmID int64) ([]Gr33nfertigationEcTarget, error)
 	// RAG ingest: actions linked to this farm via schedule, rule, or fertigation program (exactly one parent).
 	ListExecutableActionsByFarmForRAG(ctx context.Context, farmID int64) ([]Gr33ncoreExecutableAction, error)
@@ -682,6 +699,10 @@ type Querier interface {
 	MergeFarmMetaData(ctx context.Context, arg MergeFarmMetaDataParams) (Gr33ncoreFarm, error)
 	// Running SUM over surviving rows. Called by handler after INSERT/DELETE.
 	RecalcTaskTimeSpentMinutes(ctx context.Context, taskID int64) error
+	// Dosing state: add to the running total after a pump-fire is queued.
+	RecordDosingSessionDose(ctx context.Context, arg RecordDosingSessionDoseParams) (Gr33nfertigationDosingSession, error)
+	// Sampling state: bump the collected-this-cycle counter and stash the raw reading.
+	RecordDosingSessionSample(ctx context.Context, arg RecordDosingSessionSampleParams) (Gr33nfertigationDosingSession, error)
 	RejectInsertCommonsBundle(ctx context.Context, arg RejectInsertCommonsBundleParams) (Gr33ncoreInsertCommonsBundle, error)
 	RemoveFarmMember(ctx context.Context, arg RemoveFarmMemberParams) error
 	RemoveRecipeComponent(ctx context.Context, arg RemoveRecipeComponentParams) error
