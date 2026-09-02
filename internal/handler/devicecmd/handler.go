@@ -21,8 +21,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "gr33n-api/internal/db"
-	acthandler "gr33n-api/internal/handler/actuator"
 	"gr33n-api/internal/farmauthz"
+	acthandler "gr33n-api/internal/handler/actuator"
 	"gr33n-api/internal/httputil"
 	commontypes "gr33n-api/internal/platform/commontypes"
 	"gr33n-api/internal/systemlog"
@@ -43,7 +43,8 @@ func NewHandlerWithQuerier(q db.Querier) *Handler {
 
 // POST /devices/{id}/commands
 // Body: { "command_type": "pulse"|"actuator", "actuator_id": N, "command": "on",
-//         "duration_seconds": N?, "reason": "..." }
+//
+//	"duration_seconds": N?, "reason": "..." }
 //
 // Also accepts "command_type": "mix_batch" with a full MixPlan payload (Phase 39 WS3).
 func (h *Handler) Enqueue(w http.ResponseWriter, r *http.Request) {

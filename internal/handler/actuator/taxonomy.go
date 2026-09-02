@@ -26,8 +26,8 @@ var AllKnownActuatorTypes = map[string]struct{}{
 	"circulation_fan": {},
 	"glazing_panel":   {},
 	// Lighting (Phase 35)
-	"light":       {},
-	"grow_light":  {},
+	"light":      {},
+	"grow_light": {},
 	// Climate / legacy greenhouse
 	"shade_cloth_motor": {},
 	"humidifier":        {},

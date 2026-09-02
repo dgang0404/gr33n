@@ -325,17 +325,17 @@ func (h *Handler) RecordEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		CommandSent             string          `json:"command_sent"`
-		Source                  string          `json:"source"`
-		EventTime               string          `json:"event_time"`
-		ExecutionStatus         string          `json:"execution_status"`
-		ResultingStateNumeric   *float64        `json:"resulting_state_numeric"`
-		ResultingStateText      *string         `json:"resulting_state_text"`
-		TriggeredByScheduleID   *int64          `json:"triggered_by_schedule_id"`
-		TriggeredByRuleID       *int64          `json:"triggered_by_rule_id"`
-		ProgramID               *int64          `json:"program_id"`
-		ParametersSent          json.RawMessage `json:"parameters_sent"`
-		MetaData                json.RawMessage `json:"meta_data"`
+		CommandSent           string          `json:"command_sent"`
+		Source                string          `json:"source"`
+		EventTime             string          `json:"event_time"`
+		ExecutionStatus       string          `json:"execution_status"`
+		ResultingStateNumeric *float64        `json:"resulting_state_numeric"`
+		ResultingStateText    *string         `json:"resulting_state_text"`
+		TriggeredByScheduleID *int64          `json:"triggered_by_schedule_id"`
+		TriggeredByRuleID     *int64          `json:"triggered_by_rule_id"`
+		ProgramID             *int64          `json:"program_id"`
+		ParametersSent        json.RawMessage `json:"parameters_sent"`
+		MetaData              json.RawMessage `json:"meta_data"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")

@@ -54,9 +54,9 @@ type Worker struct {
 	// Phase 20.7: track the last UTC date we rolled up electricity for
 	// so the scheduled tick only fires once per day (the per-actuator
 	// idempotency table handles retries separately).
-	lastElecRollupDate time.Time
+	lastElecRollupDate         time.Time
 	metadataStepsFallbackTotal atomic.Uint64
-	offlineAfterSeconds      int64
+	offlineAfterSeconds        int64
 }
 
 func NewWorker(pool *pgxpool.Pool, simulation bool, opts ...WorkerOption) *Worker {
@@ -581,8 +581,8 @@ func (w *Worker) executeAction(ctx context.Context, schedule db.Gr33ncoreSchedul
 			TriggeredByScheduleID: &schedule.ID,
 			TriggeredByRuleID:     nil,
 			Source:                source,
-		ExecutionStatus: &status,
-		MetaData:        []byte(`{}`),
+			ExecutionStatus:       &status,
+			MetaData:              []byte(`{}`),
 		})
 		if err != nil {
 			return err
