@@ -6452,6 +6452,30 @@ paths:
         "200": { description: Updated }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /farms/{id}/sensor-sensitivity:
+    patch:
+      tags: [farms]
+      summary: Set the farm-wide default sensor quality scale sensitivity
+      description: |
+        Phase 217 WS5 — default_sensor_sensitivity (narrow/normal/wide) controls
+        how wide the 5-tier critical/bad/mid/good/awesome bands are for sensors
+        that don't have a per-sensor quality_sensitivity override.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                default_sensor_sensitivity: { type: string, enum: [narrow, normal, wide] }
+      responses:
+        "200": { description: Updated }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /fertigation/programs/{rid}/metadata:
     patch:
       tags: [fertigation]

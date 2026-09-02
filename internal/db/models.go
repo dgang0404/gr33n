@@ -1803,6 +1803,7 @@ type Gr33ncoreSensor struct {
 	AlertDurationSeconds   int32              `db:"alert_duration_seconds" json:"alert_duration_seconds"`
 	AlertCooldownSeconds   int32              `db:"alert_cooldown_seconds" json:"alert_cooldown_seconds"`
 	AlertBreachStartedAt   pgtype.Timestamptz `db:"alert_breach_started_at" json:"alert_breach_started_at"`
+	QualitySensitivity     *string            `db:"quality_sensitivity" json:"quality_sensitivity"`
 	ReadingIntervalSeconds *int32             `db:"reading_interval_seconds" json:"reading_interval_seconds"`
 	IsCalibrated           *bool              `db:"is_calibrated" json:"is_calibrated"`
 	LastCalibrationDate    pgtype.Date        `db:"last_calibration_date" json:"last_calibration_date"`

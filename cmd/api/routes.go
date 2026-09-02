@@ -300,6 +300,8 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("POST /devices/{id}/commands/{cid}/cancel", jwt(http.HandlerFunc(devicecmd.Cancel)))
 	mux.Handle("GET /farms/{id}/sensors/readings/latest", jwt(http.HandlerFunc(sensor.LatestReadingsByFarm)))
 	mux.Handle("GET /farms/{id}/sensors", jwt(http.HandlerFunc(sensor.ListByFarm)))
+	// Phase 217 WS5 — farm-wide default sensor quality sensitivity
+	mux.Handle("PATCH /farms/{id}/sensor-sensitivity", jwt(http.HandlerFunc(sensor.PatchSensitivity)))
 	mux.Handle("GET /farms/{id}/schedules", jwt(http.HandlerFunc(automation.ListSchedulesByFarm)))
 	mux.Handle("POST /farms/{id}/schedules", jwt(http.HandlerFunc(automation.CreateSchedule)))
 	mux.Handle("GET /farms/{id}/tasks", jwt(http.HandlerFunc(task.ListByFarm)))

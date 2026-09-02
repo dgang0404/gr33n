@@ -334,9 +334,20 @@
         <span>Live Sensors ({{ store.sensors.length }})</span>
         <span class="text-zinc-600 group-open:rotate-180 transition-transform">▾</span>
       </summary>
-      <div v-if="store.sensors.length" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 mt-4">
+      <div v-if="store.sensors.length" class="flex items-center justify-end gap-2 mt-3" @click.stop>
+        <label class="text-[11px] text-zinc-500">Sensitivity
+          <select v-model="sensorSensitivity" @change="onSensorSensitivityChange"
+            class="ml-1 bg-zinc-950 border border-zinc-700 rounded px-1.5 py-0.5 text-xs text-white"
+            data-test="sensor-sensitivity-select">
+            <option value="narrow">Narrow (strict)</option>
+            <option value="normal">Normal</option>
+            <option value="wide">Wide (lenient)</option>
+          </select>
+        </label>
+      </div>
+      <div v-if="store.sensors.length" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 mt-3">
         <SensorTile v-for="s in store.sensors" :key="s.id"
-          :sensor="s" :reading="store.readings[s.id]" />
+          :sensor="s" :reading="store.readings[s.id]" :crop-stage-row="cropStageByZone[s.zone_id]" />
       </div>
       <EmptyStateHint
         v-else
@@ -419,6 +430,9 @@ const cropCycles = ref([])
 const siteWeather = ref(null)
 const reservoirs = ref([])
 const quickActionsOpen = ref(false)
+// Phase 217 WS5/WS6 — sensor quality scale sensitivity + per-zone crop stage
+const sensorSensitivity = ref('normal')
+const cropStageByZone = ref({})
 const quickZone = ref(null)
 const quickStatus = ref(null)
 
@@ -679,6 +693,8 @@ async function refreshAll(force = false) {
   nfInputs.value = inputs
   costTransactions.value = costs
   cropCycles.value = cycles
+  sensorSensitivity.value = store.farm?.meta_data?.default_sensor_sensitivity || 'normal'
+  void resolveCropStageByZone(fid)
 
   await Promise.all([
     store.loadTasks(fid),
@@ -697,6 +713,48 @@ async function refreshAll(force = false) {
   void store.loadLayoutBackground(fid)
 
   lastRefreshAt.value = Date.now()
+}
+
+// Phase 217 WS5 — operator changes the farm-wide default sensitivity for the
+// 5-tier sensor scale (per-sensor overrides still take precedence in SensorTile).
+async function onSensorSensitivityChange() {
+  const fid = farmContext.farmId
+  if (!fid) return
+  try {
+    await store.updateFarmSensorSensitivity(fid, sensorSensitivity.value)
+  } catch {
+    // best-effort — SensorTile still reads the local ref immediately either way
+  }
+}
+
+// Phase 217 WS6 — for each zone with an active crop cycle, resolve the
+// crop_library-shaped stage row matching its current growth stage so
+// SensorTile can derive ideal ranges instead of using hardcoded defaults.
+// Best-effort: a zone with no active cycle, an unresolvable plant, or no
+// matching stage simply has no entry (SensorTile falls back to defaults).
+async function resolveCropStageByZone(farmId) {
+  const active = cropCycles.value.filter((c) => c.is_active && c.zone_id && c.plant_id && c.current_stage)
+  const profileCache = {}
+  const next = {}
+  await Promise.all(active.map(async (cycle) => {
+    try {
+      const plant = await store.getPlant(cycle.plant_id)
+      if (!plant?.crop_key) return
+      const cacheKey = `${plant.crop_key}::${plant.variety_or_cultivar || ''}`
+      if (!(cacheKey in profileCache)) {
+        profileCache[cacheKey] = store.getEffectiveCropProfile(farmId, {
+          cropKey: plant.crop_key,
+          variety: plant.variety_or_cultivar,
+        }).catch(() => null)
+      }
+      const profile = await profileCache[cacheKey]
+      const stageRow = (profile?.stages || []).find((s) => s.stage === cycle.current_stage)
+      if (stageRow) next[cycle.zone_id] = stageRow
+    } catch {
+      // best-effort — this zone's sensors just use hardcoded default ranges
+    }
+  }))
+  cropStageByZone.value = next
 }
 
 

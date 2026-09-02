@@ -289,6 +289,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		func() error { return decodeStringPtr("sensor_type", &params.SensorType) },
 		func() error { return decodeInt64Ptr("unit_id", &params.UnitID) },
 		func() error { return decodeStringPtr("hardware_identifier", &params.HardwareIdentifier) },
+		func() error { return decodeStringPtr("quality_sensitivity", &params.QualitySensitivity) },
 		func() error { return decodeNumeric("value_min_expected", &params.ValueMinExpected) },
 		func() error { return decodeNumeric("value_max_expected", &params.ValueMaxExpected) },
 		func() error { return decodeNumeric("alert_threshold_low", &params.AlertThresholdLow) },
@@ -303,6 +304,14 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	} {
 		if err := fn(); err != nil {
 			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+	if params.QualitySensitivity != nil {
+		switch *params.QualitySensitivity {
+		case "narrow", "normal", "wide":
+		default:
+			httputil.WriteError(w, http.StatusBadRequest, "quality_sensitivity must be narrow, normal, or wide")
 			return
 		}
 	}

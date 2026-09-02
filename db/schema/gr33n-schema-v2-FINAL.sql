@@ -568,6 +568,9 @@ CREATE TABLE IF NOT EXISTS gr33ncore.sensors (
     alert_duration_seconds   INTEGER     NOT NULL DEFAULT 0,
     alert_cooldown_seconds   INTEGER     NOT NULL DEFAULT 300,
     alert_breach_started_at  TIMESTAMPTZ NULL,
+    -- Phase 217 WS5 — per-sensor override for the 5-tier quality scale's band
+    -- width. NULL means "use the farm-wide default" (farms.meta_data).
+    quality_sensitivity      TEXT CHECK (quality_sensitivity IS NULL OR quality_sensitivity IN ('narrow', 'normal', 'wide')),
     reading_interval_seconds INTEGER,
     is_calibrated            BOOLEAN DEFAULT FALSE,
     last_calibration_date    DATE,

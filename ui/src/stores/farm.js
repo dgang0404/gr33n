@@ -687,6 +687,20 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    // Phase 217 WS5 — 5-tier sensor quality scale sensitivity
+    async updateSensorSensitivity(sensorId, sensitivity) {
+      const r = await api.put(`/sensors/${sensorId}`, { quality_sensitivity: sensitivity })
+      const idx = this.sensors.findIndex(s => s.id === sensorId)
+      if (idx >= 0) this.sensors[idx] = r.data
+      return r.data
+    },
+
+    async updateFarmSensorSensitivity(farmId, sensitivity) {
+      const r = await api.patch(`/farms/${farmId}/sensor-sensitivity`, { default_sensor_sensitivity: sensitivity })
+      if (this.farm && Number(this.farm.id) === Number(farmId)) this.farm = r.data
+      return r.data
+    },
+
     async loadActuatorEvents(actuatorId, { since, limit } = {}) {
       const params = new URLSearchParams()
       if (since) params.set('since', since)

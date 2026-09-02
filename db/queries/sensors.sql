@@ -65,6 +65,7 @@ SET
     reading_interval_seconds = COALESCE(sqlc.narg('reading_interval_seconds'), reading_interval_seconds),
     alert_duration_seconds   = COALESCE(sqlc.narg('alert_duration_seconds'), alert_duration_seconds),
     alert_cooldown_seconds   = COALESCE(sqlc.narg('alert_cooldown_seconds'), alert_cooldown_seconds),
+    quality_sensitivity      = COALESCE(sqlc.narg('quality_sensitivity'), quality_sensitivity),
     updated_at               = NOW(),
     updated_by_user_id       = sqlc.narg('updated_by_user_id')
 WHERE id = sqlc.arg('id') AND deleted_at IS NULL
