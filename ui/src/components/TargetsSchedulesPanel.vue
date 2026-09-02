@@ -27,7 +27,13 @@
       >
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <p class="text-sm text-white font-medium">{{ schedule.name }}</p>
+            <router-link v-if="scheduleTarget(schedule)"
+              v-nav-hint="scheduleTarget(schedule).navHint"
+              :to="scheduleTarget(schedule).to"
+              class="text-sm text-white font-medium hover:text-green-400 transition-colors"
+              :data-test="`schedule-target-link-${schedule.id}`"
+            >{{ schedule.name }}</router-link>
+            <p v-else class="text-sm text-white font-medium">{{ schedule.name }}</p>
             <p class="text-xs text-zinc-400 mt-1">{{ scheduleRunsLabel(schedule) }}</p>
             <p v-if="linkedProgram(schedule.id)" class="text-[11px] text-zinc-500 mt-1">
               Feeding plan: {{ linkedProgram(schedule.id).name }}
@@ -97,6 +103,7 @@ import EmptyStateHint from './EmptyStateHint.vue'
 import { filterSchedulesForZone } from '../lib/zoneContext.js'
 import { buildDailyCron, scheduleRunsLabel } from '../lib/cronHumanize.js'
 import { comfortAdvancedSchedulesRoute } from '../lib/workspaceRoutes.js'
+import { resolveScheduleTarget } from '../lib/automationTargetLink.js'
 
 const advancedSchedulesRoute = computed(() =>
   comfortAdvancedSchedulesRoute({ zoneId: props.zoneContextId || undefined }),
@@ -146,6 +153,13 @@ function linkedLighting(scheduleId) {
     (p) => Number(p.schedule_on_id) === Number(scheduleId) || Number(p.schedule_off_id) === Number(scheduleId),
   )
   return lp?.name || ''
+}
+
+function scheduleTarget(schedule) {
+  return resolveScheduleTarget(schedule, {
+    programs: programs.value,
+    lightingPrograms: lightingPrograms.value,
+  })
 }
 
 async function loadData() {

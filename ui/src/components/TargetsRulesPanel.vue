@@ -27,7 +27,13 @@
       >
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <p class="text-sm text-white font-medium">{{ rule.name }}</p>
+            <router-link v-if="ruleTarget(rule)"
+              v-nav-hint="ruleTarget(rule).navHint"
+              :to="ruleTarget(rule).to"
+              class="text-sm text-white font-medium hover:text-green-400 transition-colors"
+              :data-test="`rule-target-link-${rule.id}`"
+            >{{ rule.name }}</router-link>
+            <p v-else class="text-sm text-white font-medium">{{ rule.name }}</p>
             <p class="text-xs text-zinc-400 mt-1">{{ summaryFor(rule) }}</p>
           </div>
           <button
@@ -67,6 +73,7 @@ import ZoneContextBanner from './ZoneContextBanner.vue'
 import EmptyStateHint from './EmptyStateHint.vue'
 import { filterRulesForZone } from '../lib/zoneContext.js'
 import { ruleSummary } from '../lib/ruleSummary.js'
+import { resolveRuleTarget } from '../lib/automationTargetLink.js'
 
 const props = defineProps({
   zoneContextId: { type: Number, default: null },
@@ -107,6 +114,13 @@ function summaryFor(rule) {
     sensors: store.sensors,
     actuators: store.actuators,
     actions: ruleActions.value[rule.id] || [],
+  })
+}
+
+function ruleTarget(rule) {
+  return resolveRuleTarget(rule, {
+    actions: ruleActions.value[rule.id] || [],
+    actuators: store.actuators,
   })
 }
 
