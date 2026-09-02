@@ -417,6 +417,11 @@ func registerRoutes(mux *http.ServeMux, pool *pgxpool.Pool, worker *automationwo
 	mux.Handle("PATCH /fertigation/reservoirs/{rid}/base-water", jwt(http.HandlerFunc(fertigation.SetReservoirBaseWater)))
 	// Phase 216 WS7 — wire the reservoir's circulation pump (dosing default + idle-maintenance target)
 	mux.Handle("PATCH /fertigation/reservoirs/{rid}/circulation-actuator", jwt(http.HandlerFunc(fertigation.SetReservoirCirculationActuator)))
+	// Phase 216 WS6 — dosing session HTTP surface (start/list/get/abort)
+	mux.Handle("POST /farms/{id}/fertigation/mixing-events/{mid}/dosing-session", jwt(http.HandlerFunc(fertigation.CreateDosingSession)))
+	mux.Handle("GET /farms/{id}/fertigation/dosing-sessions", jwt(http.HandlerFunc(fertigation.ListActiveDosingSessions)))
+	mux.Handle("GET /fertigation/dosing-sessions/{rid}", jwt(http.HandlerFunc(fertigation.GetDosingSession)))
+	mux.Handle("POST /fertigation/dosing-sessions/{rid}/abort", jwt(http.HandlerFunc(fertigation.AbortDosingSessionByOperator)))
 
 	mux.Handle("GET /farms/{id}/crop-cycles", jwt(http.HandlerFunc(cropcycle.List)))
 	mux.Handle("POST /farms/{id}/crop-cycles", jwt(http.HandlerFunc(cropcycle.Create)))

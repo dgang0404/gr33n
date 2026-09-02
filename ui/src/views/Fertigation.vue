@@ -436,6 +436,32 @@
           {{ saving ? 'Saving\u2026' : 'Log Mix' }}
         </button>
       </form>
+
+      <!-- Phase 216 WS6 — live dosing sessions -->
+      <div v-if="dosingSessions.length" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3"
+        data-test="dosing-sessions-panel">
+        <p class="text-zinc-400 text-xs font-semibold uppercase tracking-wide">Live dosing sessions</p>
+        <div v-for="s in dosingSessions" :key="s.id"
+          class="flex flex-wrap items-center justify-between gap-2 bg-zinc-950/60 border border-zinc-800 rounded-lg p-3"
+          :data-test="`dosing-session-${s.id}`">
+          <div>
+            <p class="text-white text-sm">
+              {{ reservoirName(s.reservoir_id) }}
+              <span class="text-zinc-500 text-xs ml-1">· {{ dosingStatusLabel(s) }} · {{ dosingElapsed(s) }}</span>
+            </p>
+            <p class="text-zinc-500 text-xs mt-0.5">
+              {{ s.total_dosed_ml }} / {{ s.max_total_dose_ml }} mL dosed
+              <span v-if="s.last_sample_avg_ec_mscm"> · avg EC {{ s.last_sample_avg_ec_mscm }} mS/cm</span>
+            </p>
+          </div>
+          <button v-if="s.status !== 'done' && s.status !== 'aborted'" @click="abortDosingSession(s)"
+            :disabled="dosingSessionBusy[s.id]"
+            class="px-2 py-1 bg-red-900/60 hover:bg-red-800 text-red-200 text-xs rounded-lg disabled:opacity-50">
+            {{ dosingSessionBusy[s.id] ? '…' : 'Abort' }}
+          </button>
+        </div>
+      </div>
+
       <div class="space-y-3">
         <div v-for="m in mixingEvents" :key="m.id"
           class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
@@ -446,11 +472,32 @@
                 <span v-if="m.program_id"> · Program {{ programName(m.program_id) }}</span>
               </p>
             </div>
-            <button type="button" class="text-xs text-zinc-400 hover:text-zinc-200"
-              @click="toggleMixComponents(m.id)">
-              {{ mixingExpanded[m.id] ? 'Hide' : 'Show' }} inventory draws
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" class="text-xs text-green-500 hover:text-green-400"
+                @click="toggleDoseForm(m)">
+                {{ showDoseForm[m.id] ? 'Cancel' : 'Start dosing session' }}
+              </button>
+              <button type="button" class="text-xs text-zinc-400 hover:text-zinc-200"
+                @click="toggleMixComponents(m.id)">
+                {{ mixingExpanded[m.id] ? 'Hide' : 'Show' }} inventory draws
+              </button>
+            </div>
           </div>
+          <form v-if="showDoseForm[m.id]" @submit.prevent="submitDosingSession(m)"
+            class="mt-2 flex items-end gap-2 border-t border-zinc-800 pt-2">
+            <label class="text-[10px] text-zinc-500">Increment
+              <input v-model.number="doseForm[m.id].doseIncrementMl" type="number" step="0.1" min="0.1"
+                class="input-field text-xs py-1 w-16 mt-0.5" /> mL
+            </label>
+            <label class="text-[10px] text-zinc-500">Max total
+              <input v-model.number="doseForm[m.id].maxTotalDoseMl" type="number" step="0.5" min="0.5"
+                class="input-field text-xs py-1 w-16 mt-0.5" /> mL
+            </label>
+            <button type="submit" :disabled="dosingSessionBusy[m.id]"
+              class="px-2 py-1 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg disabled:opacity-50">
+              {{ dosingSessionBusy[m.id] ? 'Starting…' : 'Start' }}
+            </button>
+          </form>
           <p v-if="m.notes" class="text-zinc-600 text-xs mt-2 line-clamp-3">{{ m.notes }}</p>
           <div v-if="mixingExpanded[m.id]" class="mt-3 border-t border-zinc-800 pt-3">
             <p v-if="!mixingComponentsCache[m.id]?.length && mixingComponentsLoading[m.id]" class="text-zinc-500 text-xs">Loading…</p>
@@ -649,7 +696,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useFarmStore } from '../stores/farm'
 import { useFarmContextStore } from '../stores/farmContext'
@@ -745,6 +792,69 @@ const mixingEvents = ref([])
 const mixingExpanded = ref({})
 const mixingComponentsCache = reactive({})
 const mixingComponentsLoading = reactive({})
+// Phase 216 WS6 — live dosing sessions panel (dose/circulate/settle/sample/evaluate loop)
+const dosingSessions = ref([])
+const dosingSessionBusy = reactive({})
+const showDoseForm = reactive({})
+const doseForm = reactive({})
+let dosingSessionsPollTimer = null
+
+const DOSING_STATUS_LABEL = {
+  idle: 'Waiting to dose',
+  dosing: 'Dosing…',
+  circulating: 'Circulating…',
+  settling: 'Settling…',
+  sampling: 'Sampling…',
+  evaluating: 'Evaluating…',
+  done: 'Done',
+  aborted: 'Aborted',
+}
+
+function dosingStatusLabel(s) {
+  return DOSING_STATUS_LABEL[s.status] || s.status
+}
+
+function dosingElapsed(s) {
+  const started = new Date(s.started_at).getTime()
+  if (!started) return ''
+  const mins = Math.floor((Date.now() - started) / 60000)
+  if (mins < 1) return '<1 min'
+  if (mins < 60) return `${mins} min`
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`
+}
+
+async function refreshDosingSessions() {
+  if (!farmId.value) return
+  dosingSessions.value = await store.loadDosingSessions(farmId.value)
+}
+
+async function abortDosingSession(s) {
+  dosingSessionBusy[s.id] = true
+  try {
+    await store.abortDosingSession(s.id, 'aborted by operator')
+    await refreshDosingSessions()
+  } finally { dosingSessionBusy[s.id] = false }
+}
+
+function toggleDoseForm(m) {
+  showDoseForm[m.id] = !showDoseForm[m.id]
+  if (showDoseForm[m.id] && !doseForm[m.id]) {
+    doseForm[m.id] = { doseIncrementMl: 0.5, maxTotalDoseMl: 20 }
+  }
+}
+
+async function submitDosingSession(m) {
+  dosingSessionBusy[m.id] = true
+  try {
+    await store.createDosingSession(farmId.value, m.id, {
+      dose_increment_ml: doseForm[m.id].doseIncrementMl,
+      max_total_dose_ml: doseForm[m.id].maxTotalDoseMl,
+    })
+    showDoseForm[m.id] = false
+    await refreshDosingSessions()
+  } finally { dosingSessionBusy[m.id] = false }
+}
+
 const cropCycles = ref([])
 const fertigationEvents = ref([])
 const eventCropFilter = ref('')
@@ -1150,6 +1260,12 @@ onMounted(() => {
     selectTab('programs')
     showProgramForm.value = true
   }
+  refreshDosingSessions()
+  dosingSessionsPollTimer = setInterval(refreshDosingSessions, 15000)
+})
+
+onUnmounted(() => {
+  if (dosingSessionsPollTimer) clearInterval(dosingSessionsPollTimer)
 })
 
 async function submitReservoir() {

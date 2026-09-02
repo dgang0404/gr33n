@@ -739,6 +739,22 @@ export const useFarmStore = defineStore('farm', {
       return r.data
     },
 
+    // Phase 216 WS6 — dosing session (dose/circulate/settle/sample/evaluate loop)
+    async loadDosingSessions(farmId) {
+      const r = await api.get(`/farms/${farmId}/fertigation/dosing-sessions`)
+      return Array.isArray(r.data) ? r.data : []
+    },
+
+    async createDosingSession(farmId, mixingEventId, payload) {
+      const r = await api.post(`/farms/${farmId}/fertigation/mixing-events/${mixingEventId}/dosing-session`, payload)
+      return r.data
+    },
+
+    async abortDosingSession(sessionId, reason) {
+      const r = await api.post(`/fertigation/dosing-sessions/${sessionId}/abort`, { reason: reason || '' })
+      return r.data
+    },
+
     async createEcTarget(farmId, data) {
       const r = await api.post(`/farms/${farmId}/fertigation/ec-targets`, data)
       return r.data
