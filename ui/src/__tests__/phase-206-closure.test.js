@@ -36,7 +36,6 @@ const ACTIVE_FEATURE_AT_TOP = [
   'phase_211_07_guardian_pending_e2e.plan.md',
   'phase_212_dual_farm_federation_test.plan.md',
   'phase_213_ci_keep_green.plan.md',
-  'phase_217_automation_linking_sensor_scale.plan.md',
 ]
 
 const ALLOWED_AT_TOP = [...HUBS_AT_TOP, ...ACTIVE_FEATURE_AT_TOP]

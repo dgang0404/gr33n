@@ -11,34 +11,35 @@ overview: >
 todos:
   - id: ws1-rule-summary-bugfix
     content: "WS1: Fix ruleSummary.js rendering 'sensor is undefined undefined' for rules with malformed/empty predicates (missing op/value) or unresolvable sensor_id — guard instead of interpolating raw undefined"
-    status: not-started
+    status: completed
   - id: ws2-target-resolver
     content: "WS2: Client-side resolver (schedules/rules -> zone/actuator/reservoir/lighting_program) since schedules and automation_rules don't carry target fields directly — must join through executable_actions.target_actuator_id -> actuators.zone_id, and lighting_programs.schedule_on_id/schedule_off_id -> zone_id, using data already loaded into the farm store (no new API calls)"
-    status: not-started
+    status: completed
   - id: ws3-clickable-labels
     content: "WS3: Wire resolved targets into TargetsSchedulesPanel.vue and TargetsRulesPanel.vue as router-links with v-nav-hint (reusing the existing SensorTile.vue pattern) so hovering/clicking a schedule or rule label wiggles the matching sidebar section and navigates to the actual zone/reservoir"
-    status: not-started
+    status: completed
   - id: ws4-five-tier-scale
     content: "WS4: Extend SensorTile's 3-tier ok/warn/danger classification to 5 tiers (critical/bad/mid/good/awesome) with plain-language labels and a color ramp, replacing the flat 15%-of-range warn band with graduated bands"
-    status: not-started
+    status: completed
   - id: ws5-sensitivity-control
     content: "WS5: Adjustable sensitivity at two levels — a farm-wide default (how wide the 'mid' band is) and a per-sensor override, extending the existing alert_threshold_low/high override pattern rather than replacing it"
-    status: not-started
+    status: completed
   - id: ws6-crop-library-autowiring
     content: "WS6: For a sensor whose zone has an active crop cycle, auto-derive ideal ranges from crop_library.yaml by crop_key + current_stage (ec_min/target/max, ph_min/max, temp_min/max_c, rh_min/max_pct) instead of the hardcoded SENSOR_META defaults; falls back to hardcoded defaults when no crop cycle, no stage match, or sensor_type has no library field mapping"
-    status: not-started
+    status: completed
   - id: ws7-scope-note-aquaponics
     content: "WS7: Explicitly out of scope for this phase — aquaponics/animal domains (fish tank DO, etc.) have no equivalent ideal-range knowledge base yet; keep using hardcoded SENSOR_META defaults there and flag as a follow-on phase once such a source exists"
-    status: not-started
+    status: completed
   - id: ws8-tests
     content: "WS8: Unit tests for the target resolver, the 5-tier classifier, and the sensitivity override precedence (per-sensor > farm default > hardcoded); UI test confirming a schedule/rule label renders as a link with v-nav-hint when a target resolves, and plain text when it doesn't"
-    status: not-started
+    status: completed
 isProject: false
 ---
 
 # Phase 217 — Automation resource linking + qualitative sensor scale
 
-**Status:** planned — not started.
+**Status:** shipped 2026-09-02. All eight workstreams landed. See "Closure" at the bottom for
+what shipped vs. explicitly deferred.
 
 ## Why this exists
 
@@ -127,3 +128,36 @@ hardcoded defaults exactly as today.
   the UI, not by writing computed values back onto `sensors.alert_threshold_low/high`. Keeping
   it read-only avoids the library silently overwriting an operator's explicit override, and
   keeps the crop cycle's stage transitions live without a backend sync step.
+
+## Closure (2026-09-02)
+
+All eight workstreams shipped:
+
+- **WS1** — `ruleSummary.js` filters predicates to ones with both `op` and `value` present
+  before rendering them, eliminating the literal "undefined" text.
+- **WS2/WS3** — `ui/src/lib/automationTargetLink.js` (`resolveScheduleTarget`,
+  `resolveRuleTarget`) resolves entirely from data already in the farm store; wired into
+  `TargetsSchedulesPanel.vue`/`TargetsRulesPanel.vue` as `v-nav-hint` links, falling back to
+  plain text when nothing resolves.
+- **WS4** — `ui/src/lib/sensorQuality.js`'s `classifySensorQuality()` replaced the 3-tier
+  check with 5 graduated bands around a target (defaults to range midpoint); new
+  `badge-critical/bad/mid/good/awesome` CSS classes.
+- **WS5** — `gr33ncore.sensors.quality_sensitivity` (per-sensor override) +
+  `farms.meta_data.default_sensor_sensitivity` (farm-wide default, via the existing generic
+  `MergeFarmMetaData` query — no new farms column). Precedence: per-sensor > farm default >
+  `'normal'`. A sensitivity picker lives on the Live Sensors panel header in `Dashboard.vue`.
+- **WS6** — `Dashboard.vue`'s `resolveCropStageByZone()` resolves each active crop cycle's
+  plant → crop_key → `GET /farms/{id}/crop-profiles/effective` → stage row, passed to
+  `SensorTile` as `cropStageRow`; `idealRangeFromCropStage()` maps `ec`/`ph`/`temperature`/
+  `humidity` sensor_types to the matching stage fields. Best-effort throughout — no active
+  cycle, unresolvable plant, or no stage match just falls back to hardcoded defaults.
+- **WS7** — confirmed out of scope; no code changes.
+- **WS8** — 19 classifier/resolver/sensitivity unit tests (`sensor-quality.test.js`), 9
+  target-resolver tests (`automation-target-link.test.js`), 1 `ruleSummary` regression test,
+  and a static-analysis panel-wiring test (`automation-label-linking.test.js`, matching the
+  existing `phase-80-closure.test.js` convention for these same two panel files).
+
+Full UI suite: 285 files / 1459 tests passing. Backend: `go build`/`vet` clean, full `cmd/api`
+suite passing against a live Postgres, OpenAPI parity fixed for the new
+`PATCH /farms/{id}/sensor-sensitivity` route.
+
