@@ -25,7 +25,7 @@ func CommandAllowed(actuatorType, command string) bool {
 // PulseDurationAllowed reports whether timed on/off pulses are supported for this actuator type.
 func PulseDurationAllowed(actuatorType string) bool {
 	switch actuatorType {
-	case "pump", "relay", "water_valve", "return_pump", "air_pump", "feeder_hopper":
+	case "pump", "relay", "water_valve", "return_pump", "air_pump", "feeder_hopper", "circulation_pump":
 		return true
 	default:
 		return false

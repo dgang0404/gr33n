@@ -41,6 +41,8 @@ var AllKnownActuatorTypes = map[string]struct{}{
 	// Aquaponics
 	"return_pump": {},
 	"air_pump":    {},
+	// Fertigation (Phase 216) — bound to a reservoir_id, not a zone_id.
+	"circulation_pump": {},
 	// Generic
 	"relay": {},
 	"pump":  {},
@@ -72,7 +74,7 @@ func ValidCommands(actuatorType string) []string {
 	case "exhaust_fan", "circulation_fan",
 		"humidifier", "dehumidifier", "co2_injector",
 		"heat_lamp", "return_pump", "air_pump",
-		"light", "grow_light", "relay", "pump":
+		"light", "grow_light", "relay", "pump", "circulation_pump":
 		return []string{"on", "off"}
 	case "water_valve", "gate":
 		return []string{"open", "close", "on", "off"}
