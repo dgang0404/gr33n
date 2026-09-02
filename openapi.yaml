@@ -3299,6 +3299,122 @@ paths:
                   message: { type: string }
         "400": { $ref: "#/components/responses/BadRequest" }
 
+  /fertigation/reservoirs/{rid}/circulation-actuator:
+    patch:
+      tags: [fertigation]
+      summary: Wire (or clear) a reservoir's circulation_pump actuator
+      description: |
+        Phase 216 WS7 — used both as the dosing-session default (WS2) and the
+        idle-maintenance schedule's target. `actuator_id: 0` or omitted clears
+        the wiring. The actuator must be type `circulation_pump` and belong to
+        the same farm as the reservoir.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ResourceID" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actuator_id: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Reservoir updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reservoir: { $ref: "#/components/schemas/Reservoir" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/fertigation/mixing-events/{mid}/dosing-session:
+    post:
+      tags: [fertigation]
+      summary: Start a Phase 216 dosing session for a mixing event
+      description: |
+        Starts the dose \u2192 circulate \u2192 settle \u2192 sample \u2192 evaluate
+        loop (WS1/WS2). Resolves the reservoir + its `circulation_actuator_id`
+        from the mixing event; the automation worker picks the new session up
+        (status starts `idle`) on its next tick.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+        - name: mid
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DosingSessionCreate" }
+      responses:
+        "201":
+          description: Dosing session created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DosingSession" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /farms/{id}/fertigation/dosing-sessions:
+    get:
+      tags: [fertigation]
+      summary: List active dosing sessions for a farm
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ID" }
+      responses:
+        "200":
+          description: Non-terminal dosing sessions (status not done/aborted)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DosingSession" }
+
+  /fertigation/dosing-sessions/{rid}:
+    get:
+      tags: [fertigation]
+      summary: Get one dosing session's live state
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ResourceID" }
+      responses:
+        "200":
+          description: Dosing session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DosingSession" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /fertigation/dosing-sessions/{rid}/abort:
+    post:
+      tags: [fertigation]
+      summary: Manually abort a dosing session
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/ResourceID" }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: Dosing session aborted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DosingSession" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /farms/{id}/fertigation/mix-jobs:
     post:
       tags: [fertigation]
@@ -9673,6 +9789,39 @@ components:
         volume_added_ml: { type: number }
         dilution_ratio: { type: string, nullable: true }
         notes: { type: string, nullable: true }
+
+    DosingSessionCreate:
+      type: object
+      required: [dose_increment_ml, max_total_dose_ml]
+      properties:
+        dose_increment_ml: { type: number, description: "Calibrated single-dose volume in mL (e.g. 0.5)" }
+        max_total_dose_ml: { type: number, description: "Hard safety cap \u2014 session stops firing once this is spent" }
+        circulate_seconds: { type: integer, default: 30 }
+        settle_seconds: { type: integer, default: 30 }
+        samples_per_cycle: { type: integer, default: 3 }
+        max_no_improvement_cycles: { type: integer, default: 3, description: "Fouled-sensor guard: abort after this many cycles with no EC improvement" }
+
+    DosingSession:
+      type: object
+      description: Phase 216 — dose/circulate/settle/sample/evaluate state machine, 1:1 with a mixing_event.
+      properties:
+        id: { type: integer, format: int64 }
+        mixing_event_id: { type: integer, format: int64 }
+        farm_id: { type: integer, format: int64 }
+        reservoir_id: { type: integer, format: int64 }
+        circulation_actuator_id: { type: integer, format: int64, nullable: true }
+        status: { type: string, enum: [idle, dosing, circulating, settling, sampling, evaluating, done, aborted] }
+        next_action_at: { type: string, format: date-time, nullable: true }
+        dose_increment_ml: { type: number }
+        max_total_dose_ml: { type: number }
+        total_dosed_ml: { type: number }
+        samples_collected_this_cycle: { type: integer }
+        last_sample_ec_mscm: { type: number, nullable: true }
+        last_sample_avg_ec_mscm: { type: number, nullable: true }
+        no_improvement_cycles: { type: integer }
+        aborted_reason: { type: string, nullable: true }
+        started_at: { type: string, format: date-time }
+        completed_at: { type: string, format: date-time, nullable: true }
 
     DeviceCommand:
       type: object

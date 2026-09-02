@@ -454,7 +454,7 @@
               <span v-if="s.last_sample_avg_ec_mscm"> · avg EC {{ s.last_sample_avg_ec_mscm }} mS/cm</span>
             </p>
           </div>
-          <button v-if="s.status !== 'done' && s.status !== 'aborted'" @click="abortDosingSession(s)"
+          <button v-if="!isDosingSessionTerminal(s)" @click="abortDosingSession(s)"
             :disabled="dosingSessionBusy[s.id]"
             class="px-2 py-1 bg-red-900/60 hover:bg-red-800 text-red-200 text-xs rounded-lg disabled:opacity-50">
             {{ dosingSessionBusy[s.id] ? '…' : 'Abort' }}
@@ -713,6 +713,7 @@ import { loadDomainEnums, enumValues, getDomainEnums } from '../lib/domainEnums.
 import api from '../api/index.js'
 import { comfortTabRoute, feedWaterFertigationRoute, naturalFarmingManageRoute, naturalFarmingTabRoute, resolveFertigationSubTab } from '../lib/workspaceRoutes.js'
 import { resolveWorkspaceTab } from '../lib/workspaces.js'
+import { dosingStatusLabel, dosingElapsed, isDosingSessionTerminal } from '../lib/dosingSession.js'
 
 const FEED_WATER_ROUTE = 'feed-water'
 
@@ -798,30 +799,6 @@ const dosingSessionBusy = reactive({})
 const showDoseForm = reactive({})
 const doseForm = reactive({})
 let dosingSessionsPollTimer = null
-
-const DOSING_STATUS_LABEL = {
-  idle: 'Waiting to dose',
-  dosing: 'Dosing…',
-  circulating: 'Circulating…',
-  settling: 'Settling…',
-  sampling: 'Sampling…',
-  evaluating: 'Evaluating…',
-  done: 'Done',
-  aborted: 'Aborted',
-}
-
-function dosingStatusLabel(s) {
-  return DOSING_STATUS_LABEL[s.status] || s.status
-}
-
-function dosingElapsed(s) {
-  const started = new Date(s.started_at).getTime()
-  if (!started) return ''
-  const mins = Math.floor((Date.now() - started) / 60000)
-  if (mins < 1) return '<1 min'
-  if (mins < 60) return `${mins} min`
-  return `${Math.floor(mins / 60)}h ${mins % 60}m`
-}
 
 async function refreshDosingSessions() {
   if (!farmId.value) return
