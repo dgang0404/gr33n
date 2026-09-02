@@ -11,37 +11,37 @@ overview: >
 todos:
   - id: ws1-schema-session-state
     content: "WS1: Add dosing session state tracking (status enum: idle/circulating/settling/sampling/evaluating/dosing/done/aborted, next_action_at) — new gr33nfertigation.dosing_sessions table linked 1:1 to a mixing_event, not new columns on mixing_events itself"
-    status: not-started
+    status: completed
   - id: ws2-worker-state-machine
     content: "WS2: Worker driver for the state machine — persists current state + next-transition timestamp in DB (not memory) so a restart mid-cycle resumes correctly instead of losing the session"
-    status: not-started
+    status: completed
   - id: ws3-circulation-actuator
     content: "WS3: New actuator_type 'circulation_pump', bound to a reservoir_id (not a zone_id like irrigation/growlight actuators) — wiring + simulation-mode support in pi_client mirrors the existing SimulationActuatorController pattern"
-    status: not-started
+    status: completed
   - id: ws4-sensor-averaging
     content: "WS4: Store every raw EC/PPM sensor_readings row during the sampling window (cheap, useful for debugging sensor noise); app-layer computes the rolling average that the state machine evaluates against — no new sensor table needed"
-    status: not-started
+    status: completed
   - id: ws5-safety-caps
     content: "WS5: Hard per-session max-dose-ml cap enforced before any pump fire (sum of mixing_event_components.volume_added_ml for the session); Guardian propose→confirm gate for any single dose above a configurable delta threshold"
-    status: not-started
+    status: completed
   - id: ws6-ui-session-panel
     content: "WS6: Fertigation view — live dosing session panel (current state, elapsed circulate/settle time, readings so far, cumulative ml vs cap, manual Abort button)"
-    status: not-started
+    status: completed
   - id: ws7-reservoir-idle-circulation
     content: "WS7: Reservoir idle-maintenance circulation (rain/bulk-capture tanks) — schedule-only reuse of the existing gr33nfertigation.programs + gr33ncore.schedules cron engine, NOT the WS1/WS2 dosing state machine; register circulation_pump in the actuator taxonomy (AllKnownActuatorTypes, ValidCommands, PulseDurationAllowed), allow irrigation_only programs with no ec_target to target a reservoir, and add a lightweight 'Add maintenance circulation' quick-create on the reservoir card"
-    status: not-started
+    status: completed
   - id: ws8-tests
     content: "WS8: Worker state machine unit tests with an injectable clock (no real sleeps), migration test, UI session panel test"
-    status: not-started
+    status: completed
 isProject: false
 ---
 
 # Phase 216 — Fertigation circulation & dose-confirmation loop
 
-**Status:** planned — not started. Sequencing depends on the LED-rig validation pass (Phase 125
-simulation rig) surfacing any other automation gaps first; do not start this against a live
-reservoir until the state machine is unit-tested and dry-run-validated against simulated
-actuators/sensors on the LED rig.
+**Status:** shipped 2026-09-02. All eight workstreams landed and are covered by tests (Go
+smoke tests against a live DB with the worker in simulation mode, plus UI unit tests for the
+dosing session panel helpers). See "Closure" below for what was actually validated vs. what
+still needs a physical LED-rig dry run before touching a live reservoir.
 
 ## Why this exists
 
@@ -142,4 +142,41 @@ them.
 
 Sequencing: depends only on WS3 landing the `circulation_pump` actuator type; does not block
 on or wait for WS1/WS2/WS4/WS5 (the dosing loop).
+
+## Closure (2026-09-02)
+
+All eight workstreams shipped:
+
+- **WS1** — `gr33nfertigation.dosing_sessions` table + status enum + sqlc queries.
+- **WS2/WS4/WS5** — landed together as planned. `internal/automation/dosing_session_tick.go`
+  drives idle→dosing→circulating→settling→sampling→evaluating, persisting state +
+  `next_action_at` after every transition. Sampling accumulates a running EC sum
+  (`samples_sum_ec_mscm`) for a fully-typed average. Safety caps: `max_total_dose_ml`
+  checked before every fire, an outsized-delta guard (no override path exists yet to trigger
+  it, but it's in place), and a fouled/no-effect-sensor abort after `max_no_improvement_cycles`.
+- **WS3** — `circulation_pump` registered in the actuator taxonomy (type, valid commands,
+  pulse-duration allowlist) and the device type registry. Confirmed `pi_client` needs zero
+  code changes — `ActuatorController`/`SimulationActuatorController` dispatch by `driver`
+  (gpio/simulation/relay_hat), not `actuator_type`.
+- **WS6** — HTTP surface (`internal/handler/fertigation/dosing_sessions.go`: start/list/get/
+  abort) + a live dosing sessions panel on the Fertigation mixing-log tab (status, elapsed
+  time, mL dosed vs cap, latest avg EC, manual Abort, 15s poll).
+- **WS7** — `reservoirs.circulation_actuator_id` column + a quick-create UI shortcut that
+  chains the existing schedule/program/executable-action engine — no new worker code, since
+  this is schedule-only maintenance, not the dosing loop.
+- **WS8** — `cmd/api/smoke_phase216_dosing_session_test.go` drives the real worker
+  (`simulation=true`) through a full cycle against a live Postgres, forcing `next_action_at`
+  into the past between ticks instead of sleeping in real time. Covers the happy path (reaches
+  target, writes back to `mixing_events`) and the already-above-target abort guard. UI helpers
+  (`dosingStatusLabel`, `dosingElapsed`, `isDosingSessionTerminal`) extracted to
+  `ui/src/lib/dosingSession.js` with 9 unit tests. OpenAPI parity fixed (5 new routes +
+  `DosingSession`/`DosingSessionCreate` schemas).
+
+**What's validated:** the state machine's logic (transitions, safety caps, target/abort
+decisions) against a real database, worker in simulation mode.
+
+**What's *not* yet validated, and still gates a live reservoir per the Sequencing section
+above:** an actual physical dry run on the LED simulation rig with `synthetic_sensors.py`
+feeding a fake EC curve and a real (simulated) circulation actuator pulse observed on the LED
+bank. That operational dry run is a follow-up step, not blocked on any further code changes.
 
