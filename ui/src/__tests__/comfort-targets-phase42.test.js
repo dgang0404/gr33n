@@ -92,4 +92,22 @@ describe('Phase 42 — ruleSummary', () => {
     expect(text).toContain('Air temp')
     expect(text).toContain('Shade motor')
   })
+
+  // Phase 217 WS1 — a malformed/empty predicate (missing op/value, or an
+  // unresolvable sensor_id) must not render the literal string "undefined".
+  it('never interpolates literal undefined for malformed predicates', () => {
+    const text = ruleSummary(
+      {
+        name: 'Close coop gate',
+        condition_logic: 'ALL',
+        conditions_jsonb: { predicates: [{ sensor_id: 999 }] },
+      },
+      {
+        sensors: [],
+        actuators: [{ id: 5, name: 'Coop Run Gate' }],
+        actions: [{ action_type: 'control_actuator', target_actuator_id: 5, action_command: 'close' }],
+      },
+    )
+    expect(text).not.toContain('undefined')
+  })
 })

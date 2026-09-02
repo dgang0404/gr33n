@@ -26,7 +26,7 @@ export function ruleSummary(rule, ctx = {}) {
 }
 
 function conditionPhrase(rule, sensors) {
-  const conds = parsePredicates(rule)
+  const conds = parsePredicates(rule).filter((p) => p.op != null && p.value != null)
   if (!conds.length) {
     const cfg = rule?.trigger_configuration || {}
     if (rule?.trigger_source === 'sensor_reading_threshold' && cfg.sensor_id) {
