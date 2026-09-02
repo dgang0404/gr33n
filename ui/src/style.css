@@ -53,6 +53,13 @@ body,
 .badge-danger  { @apply bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full; }
 .badge-off     { @apply bg-gray-700 text-gray-400 text-xs font-semibold px-2 py-0.5 rounded-full; }
 
+/* Phase 217 WS4 — 5-tier qualitative sensor scale (SensorTile.vue) */
+.badge-critical { @apply bg-red-700 text-white text-xs font-semibold px-2 py-0.5 rounded-full; }
+.badge-bad      { @apply bg-orange-500 text-gray-900 text-xs font-semibold px-2 py-0.5 rounded-full; }
+.badge-mid      { @apply bg-amber-400 text-gray-900 text-xs font-semibold px-2 py-0.5 rounded-full; }
+.badge-good     { @apply bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full; }
+.badge-awesome  { @apply bg-emerald-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full; }
+
 /* Phase 45 WS6 — visible keyboard focus on farmer routes (light a11y pass). */
 @layer base {
   button:focus-visible,

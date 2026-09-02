@@ -24,11 +24,19 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useFarmStore } from '../stores/farm.js'
+import { classifySensorQuality, resolveSensitivity, idealRangeFromCropStage, QUALITY_LABEL } from '../lib/sensorQuality.js'
 
 const props = defineProps({
   sensor:  Object,
   reading: Object,
+  // Phase 217 WS6 — matched crop_library/effective-profile stage row for this
+  // sensor's zone (if it has an active crop cycle). Null when there isn't one
+  // or the caller hasn't resolved it — falls back to hardcoded SENSOR_META.
+  cropStageRow: { type: Object, default: null },
 })
+
+const store = useFarmStore()
 
 const SENSOR_META = {
   temperature:   { icon: '🌡️', unit: '°C',       low: 15, high: 30 },
@@ -47,31 +55,33 @@ const val   = computed(() => props.reading?.value_raw ?? null)
 
 const displayValue = computed(() => val.value == null ? '—' : Number(val.value).toFixed(1))
 
-const thresholdLow = computed(() => {
-  const db = props.sensor?.alert_threshold_low
-  return db != null ? Number(db) : meta.value.low
-})
-const thresholdHigh = computed(() => {
-  const db = props.sensor?.alert_threshold_high
-  return db != null ? Number(db) : meta.value.high
+// Precedence: per-sensor DB override > crop-library stage row (if this
+// sensor's zone has an active crop cycle) > hardcoded SENSOR_META default.
+const effectiveRange = computed(() => {
+  const dbLow = props.sensor?.alert_threshold_low
+  const dbHigh = props.sensor?.alert_threshold_high
+  if (dbLow != null && dbHigh != null) {
+    return { low: Number(dbLow), high: Number(dbHigh) }
+  }
+  const cropRange = idealRangeFromCropStage(props.sensor?.sensor_type, props.cropStageRow)
+  if (cropRange) return cropRange
+  return { low: meta.value.low, high: meta.value.high }
 })
 
-const status = computed(() => {
-  if (val.value == null) return 'unknown'
-  if (val.value < thresholdLow.value || val.value > thresholdHigh.value) return 'danger'
-  const lo = thresholdLow.value, hi = thresholdHigh.value, range = hi - lo
-  if (range > 0 && (val.value < lo + range * 0.15 || val.value > hi - range * 0.15)) return 'warn'
-  return 'ok'
-})
+const sensitivity = computed(() => resolveSensitivity(props.sensor, store.farm))
+
+const quality = computed(() => classifySensorQuality(val.value, effectiveRange.value, sensitivity.value))
 
 const badgeClass = computed(() => ({
-  ok:      'badge-ok',
-  warn:    'badge-warn',
-  danger:  'badge-danger',
-  unknown: 'badge-off',
-}[status.value]))
+  critical: 'badge-critical',
+  bad:      'badge-bad',
+  mid:      'badge-mid',
+  good:     'badge-good',
+  awesome:  'badge-awesome',
+  unknown:  'badge-off',
+}[quality.value]))
 
-const statusLabel = computed(() => ({ ok: 'OK', warn: 'WARN', danger: 'ALERT', unknown: 'NO DATA' }[status.value]))
+const statusLabel = computed(() => quality.value === 'unknown' ? 'NO DATA' : QUALITY_LABEL[quality.value])
 
 const ago = computed(() => {
   if (!props.reading?.reading_time) return 'No reading yet'
