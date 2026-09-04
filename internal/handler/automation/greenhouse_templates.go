@@ -42,13 +42,13 @@ func (h *Handler) ApplyGreenhouseRuleTemplates(w http.ResponseWriter, r *http.Re
 	}
 
 	var body struct {
-		ZoneID                int64  `json:"zone_id"`
-		ShadeActuatorID       *int64 `json:"shade_actuator_id"`
-		FanActuatorID         *int64 `json:"fan_actuator_id"`
-		LuxSensorID           *int64 `json:"lux_sensor_id"`
-		TempSensorID          *int64 `json:"temp_sensor_id"`
-		AllowMissingLuxSensor bool   `json:"allow_missing_lux_sensor"`
-		AllowMissingTempSensor bool  `json:"allow_missing_temp_sensor"`
+		ZoneID                 int64  `json:"zone_id"`
+		ShadeActuatorID        *int64 `json:"shade_actuator_id"`
+		FanActuatorID          *int64 `json:"fan_actuator_id"`
+		LuxSensorID            *int64 `json:"lux_sensor_id"`
+		TempSensorID           *int64 `json:"temp_sensor_id"`
+		AllowMissingLuxSensor  bool   `json:"allow_missing_lux_sensor"`
+		AllowMissingTempSensor bool   `json:"allow_missing_temp_sensor"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")

@@ -44,8 +44,8 @@ func TestPlanGreenhouseTemplateSkips(t *testing.T) {
 
 func TestValidateGreenhouseRuleActivation_MissingSensor(t *testing.T) {
 	rule := db.Gr33ncoreAutomationRule{
-		FarmID: 1,
-		Name:   "GH — High lux: deploy shade (zone 1)",
+		FarmID:               1,
+		Name:                 "GH — High lux: deploy shade (zone 1)",
 		TriggerConfiguration: []byte(`{"op":"gt","value":80000}`),
 	}
 	err := ValidateGreenhouseRuleActivation(t.Context(), nil, rule)

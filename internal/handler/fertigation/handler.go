@@ -3,6 +3,7 @@ package fertigation
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -222,6 +223,13 @@ func (h *Handler) DeleteProgram(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if err := h.q.DeleteRagChunksByFarmSource(r.Context(), db.DeleteRagChunksByFarmSourceParams{
+		FarmID:     prog.FarmID,
+		SourceType: "fertigation_program",
+		SourceID:   id,
+	}); err != nil {
+		log.Printf("fertigation: failed to prune rag chunks for deleted program %d: %v", id, err)
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -428,23 +436,23 @@ func (h *Handler) CreateProgram(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Name                string             `json:"name"`
-		Description         *string            `json:"description"`
-		ApplicationRecipeID *int64             `json:"application_recipe_id"`
-		ReservoirID         *int64             `json:"reservoir_id"`
-		TargetZoneID        *int64             `json:"target_zone_id"`
-		ScheduleID          *int64             `json:"schedule_id"`
-		EcTargetID          *int64             `json:"ec_target_id"`
-		TotalVolumeLiters   float64            `json:"total_volume_liters"`
-		RunDurationSeconds  *int32             `json:"run_duration_seconds"`
-		EcTriggerLow        float64            `json:"ec_trigger_low"`
-		PhTriggerLow        float64            `json:"ph_trigger_low"`
-		PhTriggerHigh       float64            `json:"ph_trigger_high"`
-		IsActive            bool               `json:"is_active"`
-		IrrigationOnly      bool               `json:"irrigation_only"`
-		Metadata            map[string]any     `json:"metadata"`
-		RecommendedCropKeys []string           `json:"recommended_crop_keys"`
-		RecommendedStages   []string           `json:"recommended_stages"`
+		Name                string                       `json:"name"`
+		Description         *string                      `json:"description"`
+		ApplicationRecipeID *int64                       `json:"application_recipe_id"`
+		ReservoirID         *int64                       `json:"reservoir_id"`
+		TargetZoneID        *int64                       `json:"target_zone_id"`
+		ScheduleID          *int64                       `json:"schedule_id"`
+		EcTargetID          *int64                       `json:"ec_target_id"`
+		TotalVolumeLiters   float64                      `json:"total_volume_liters"`
+		RunDurationSeconds  *int32                       `json:"run_duration_seconds"`
+		EcTriggerLow        float64                      `json:"ec_trigger_low"`
+		PhTriggerLow        float64                      `json:"ph_trigger_low"`
+		PhTriggerHigh       float64                      `json:"ph_trigger_high"`
+		IsActive            bool                         `json:"is_active"`
+		IrrigationOnly      bool                         `json:"irrigation_only"`
+		Metadata            map[string]any               `json:"metadata"`
+		RecommendedCropKeys []string                     `json:"recommended_crop_keys"`
+		RecommendedStages   []string                     `json:"recommended_stages"`
 		ProfileECSource     *programmeta.ProfileECSource `json:"profile_ec_source"`
 		ECBandMSCM          *programmeta.ECBand          `json:"ec_band_mscm"`
 	}
@@ -543,9 +551,9 @@ func (h *Handler) PatchProgramMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Metadata            map[string]any     `json:"metadata"`
-		RecommendedCropKeys []string           `json:"recommended_crop_keys"`
-		RecommendedStages   []string           `json:"recommended_stages"`
+		Metadata            map[string]any               `json:"metadata"`
+		RecommendedCropKeys []string                     `json:"recommended_crop_keys"`
+		RecommendedStages   []string                     `json:"recommended_stages"`
 		ProfileECSource     *programmeta.ProfileECSource `json:"profile_ec_source"`
 		ECBandMSCM          *programmeta.ECBand          `json:"ec_band_mscm"`
 	}
@@ -662,21 +670,21 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		ProgramID           *int64             `json:"program_id"`
-		ReservoirID         *int64             `json:"reservoir_id"`
-		ZoneID              int64              `json:"zone_id"`
-		CropCycleID         *int64             `json:"crop_cycle_id"`
-		AppliedAt           time.Time          `json:"applied_at"`
-		GrowthStage         *string            `json:"growth_stage"`
-		VolumeAppliedLiters float64            `json:"volume_applied_liters"`
-		RunDurationSeconds  *int32             `json:"run_duration_seconds"`
-		EcBeforeMscm        float64            `json:"ec_before_mscm"`
-		EcAfterMscm         float64            `json:"ec_after_mscm"`
-		PhBefore            float64            `json:"ph_before"`
-		PhAfter             float64            `json:"ph_after"`
-		TriggerSource       *string            `json:"trigger_source"`
-		Notes               *string            `json:"notes"`
-		Metadata            map[string]any     `json:"metadata"`
+		ProgramID           *int64         `json:"program_id"`
+		ReservoirID         *int64         `json:"reservoir_id"`
+		ZoneID              int64          `json:"zone_id"`
+		CropCycleID         *int64         `json:"crop_cycle_id"`
+		AppliedAt           time.Time      `json:"applied_at"`
+		GrowthStage         *string        `json:"growth_stage"`
+		VolumeAppliedLiters float64        `json:"volume_applied_liters"`
+		RunDurationSeconds  *int32         `json:"run_duration_seconds"`
+		EcBeforeMscm        float64        `json:"ec_before_mscm"`
+		EcAfterMscm         float64        `json:"ec_after_mscm"`
+		PhBefore            float64        `json:"ph_before"`
+		PhAfter             float64        `json:"ph_after"`
+		TriggerSource       *string        `json:"trigger_source"`
+		Notes               *string        `json:"notes"`
+		Metadata            map[string]any `json:"metadata"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid request body")

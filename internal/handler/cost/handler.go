@@ -81,9 +81,9 @@ func numericToFloat64(n pgtype.Numeric) float64 {
 }
 
 const (
-	maxCostDocumentTypeLen       = 64
-	maxCostDocumentReferenceLen  = 128
-	maxCostCounterpartyLen       = 256
+	maxCostDocumentTypeLen      = 64
+	maxCostDocumentReferenceLen = 128
+	maxCostCounterpartyLen      = 256
 )
 
 // normalizeBookkeepingField trims; nil stays nil; empty-after-trim becomes nil.
@@ -639,18 +639,18 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		TransactionDate     string  `json:"transaction_date"`
-		Category            string  `json:"category"`
-		Subcategory         *string `json:"subcategory"`
-		Amount              float64 `json:"amount"`
-		Currency            string  `json:"currency"`
-		Description         *string `json:"description"`
-		IsIncome            bool    `json:"is_income"`
-		ReceiptFileID       *int64  `json:"receipt_file_id"`
-		DocumentType        *string `json:"document_type"`
-		DocumentReference   *string `json:"document_reference"`
-		Counterparty        *string `json:"counterparty"`
-		CropCycleID         *int64  `json:"crop_cycle_id"`
+		TransactionDate   string  `json:"transaction_date"`
+		Category          string  `json:"category"`
+		Subcategory       *string `json:"subcategory"`
+		Amount            float64 `json:"amount"`
+		Currency          string  `json:"currency"`
+		Description       *string `json:"description"`
+		IsIncome          bool    `json:"is_income"`
+		ReceiptFileID     *int64  `json:"receipt_file_id"`
+		DocumentType      *string `json:"document_type"`
+		DocumentReference *string `json:"document_reference"`
+		Counterparty      *string `json:"counterparty"`
+		CropCycleID       *int64  `json:"crop_cycle_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -820,18 +820,18 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		TransactionDate     string  `json:"transaction_date"`
-		Category            string  `json:"category"`
-		Subcategory         *string `json:"subcategory"`
-		Amount              float64 `json:"amount"`
-		Currency            string  `json:"currency"`
-		Description         *string `json:"description"`
-		IsIncome            bool    `json:"is_income"`
-		ReceiptFileID       *int64  `json:"receipt_file_id"`
-		DocumentType        *string `json:"document_type"`
-		DocumentReference   *string `json:"document_reference"`
-		Counterparty        *string `json:"counterparty"`
-		CropCycleID         *int64  `json:"crop_cycle_id"`
+		TransactionDate   string  `json:"transaction_date"`
+		Category          string  `json:"category"`
+		Subcategory       *string `json:"subcategory"`
+		Amount            float64 `json:"amount"`
+		Currency          string  `json:"currency"`
+		Description       *string `json:"description"`
+		IsIncome          bool    `json:"is_income"`
+		ReceiptFileID     *int64  `json:"receipt_file_id"`
+		DocumentType      *string `json:"document_type"`
+		DocumentReference *string `json:"document_reference"`
+		Counterparty      *string `json:"counterparty"`
+		CropCycleID       *int64  `json:"crop_cycle_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid body")
@@ -980,6 +980,13 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		Details:        map[string]any{"kind": "cost_transaction_deleted"},
 	})
 	h.cleanupDeletedReceipt(r.Context(), existing.ReceiptFileID)
+	if err := h.q.DeleteRagChunksByFarmSource(r.Context(), db.DeleteRagChunksByFarmSourceParams{
+		FarmID:     existing.FarmID,
+		SourceType: "cost_transaction",
+		SourceID:   id,
+	}); err != nil {
+		log.Printf("cost: failed to prune rag chunks for deleted transaction %d: %v", id, err)
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

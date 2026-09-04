@@ -11,8 +11,8 @@ import (
 
 // Greenhouse template rule families (Phase 36 WS6).
 const (
-	ghRuleFamilyHighLux = "high_lux"
-	ghRuleFamilyHighTemp = "high_temp"
+	ghRuleFamilyHighLux      = "high_lux"
+	ghRuleFamilyHighTemp     = "high_temp"
 	ghRuleFamilyNightRetract = "night_retract"
 )
 

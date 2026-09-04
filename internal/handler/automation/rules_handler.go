@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -596,6 +597,15 @@ func (h *Handler) DeleteAutomationRule(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete automation rule")
 		return
 	}
+	// Best-effort: drop RAG citations pointing at the deleted rule so Guardian
+	// chat stops surfacing links that resolve nowhere.
+	if err := h.q.DeleteRagChunksByFarmSource(r.Context(), db.DeleteRagChunksByFarmSourceParams{
+		FarmID:     rule.FarmID,
+		SourceType: "automation_rule",
+		SourceID:   id,
+	}); err != nil {
+		log.Printf("automation: failed to prune rag chunks for deleted rule %d: %v", id, err)
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -855,6 +865,13 @@ func (h *Handler) DeleteAction(w http.ResponseWriter, r *http.Request) {
 	if err := h.q.DeleteExecutableAction(r.Context(), id); err != nil {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete action")
 		return
+	}
+	if err := h.q.DeleteRagChunksByFarmSource(r.Context(), db.DeleteRagChunksByFarmSourceParams{
+		FarmID:     farmID,
+		SourceType: "executable_action",
+		SourceID:   id,
+	}); err != nil {
+		log.Printf("automation: failed to prune rag chunks for deleted action %d: %v", id, err)
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

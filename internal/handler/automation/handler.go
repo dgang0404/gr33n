@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -351,6 +352,13 @@ func (h *Handler) DeleteSchedule(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteError(w, http.StatusInternalServerError, "failed to delete schedule")
 		return
 	}
+	if err := h.q.DeleteRagChunksByFarmSource(r.Context(), db.DeleteRagChunksByFarmSourceParams{
+		FarmID:     sch.FarmID,
+		SourceType: "schedule",
+		SourceID:   id,
+	}); err != nil {
+		log.Printf("automation: failed to prune rag chunks for deleted schedule %d: %v", id, err)
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -366,11 +374,11 @@ func (h *Handler) WorkerHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	s := h.worker.GetStatus()
 	httputil.WriteJSON(w, http.StatusOK, map[string]any{
-		"running":                         s.Running,
-		"simulation_mode":                 s.SimulationMode,
-		"last_tick_at":                    s.LastTickAt,
-		"last_error":                      s.LastError,
-		"metadata_steps_fallback_total":   s.MetadataStepsFallbackTotal,
-		"status":                          "ok",
+		"running":                       s.Running,
+		"simulation_mode":               s.SimulationMode,
+		"last_tick_at":                  s.LastTickAt,
+		"last_error":                    s.LastError,
+		"metadata_steps_fallback_total": s.MetadataStepsFallbackTotal,
+		"status":                        "ok",
 	})
 }

@@ -934,9 +934,9 @@ func (h *Handler) evaluateThresholds(ctx context.Context, sensorID int64, valueR
 		FarmID:                    sensor.FarmID,
 		TriggeringEventSourceType: &srcType,
 		TriggeringEventSourceID:   &sensorID,
-		Severity: &severity,
-		SubjectRendered:     &subject,
-		MessageTextRendered: &msg,
+		Severity:                  &severity,
+		SubjectRendered:           &subject,
+		MessageTextRendered:       &msg,
 	})
 	if err != nil {
 		log.Printf("alert: failed to create for sensor %d: %v", sensorID, err)
